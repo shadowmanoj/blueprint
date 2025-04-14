@@ -14,6 +14,7 @@ from services.analyzer import Analyzer
 from services.planner import Planner
 from services.spec_generator import SpecGenerator
 from services.llm_service import LLMService
+from services.context_retriever import ContextRetriever
 
 
 # Configure logging
@@ -41,6 +42,7 @@ class TechSpecPipeline:
         self.input_dir = self.config.get('input_dir') or os.path.join(self.base_dir, 'input')
         self.output_dir = self.config.get('output_dir') or os.path.join(self.base_dir, 'output')
         self.context_dir = self.config.get('context_dir') or os.path.join(self.base_dir, 'context')
+        self.repo_context_dir = self.config.get('repo_context_dir') or os.path.join(self.base_dir, 'repo_context')
         
         # Ensure output directory exists
         os.makedirs(self.output_dir, exist_ok=True)
@@ -58,11 +60,12 @@ class TechSpecPipeline:
         self.analyzer = Analyzer(self.config.get('analyzer_config'))
         self.planner = Planner(repo_rules_path)
         self.spec_generator = SpecGenerator(guidelines_path)
+        self.context_retriever = ContextRetriever(self.repo_context_dir)
         
         # Initialize LLM service if API key is available
         api_key = self.config.get('openai_api_key') or os.environ.get('OPENAI_API_KEY')
         if api_key:
-            self.llm_service = LLMService(api_key=api_key)
+            self.llm_service = LLMService(api_key=api_key, context_base_path=self.repo_context_dir)
             logger.info("LLM service initialized.")
         else:
             self.llm_service = None
@@ -116,7 +119,7 @@ class TechSpecPipeline:
             if self.llm_service:
                 # Use LLM for planning
                 architecture_plan = self.llm_service.plan_architecture(extracted_info, repo_rules)
-                logger.info("Architecture planned using LLM")
+                logger.info("Architecture planned using LLM with domain context")
             else:
                 # Use rule-based planner
                 architecture_plan = self.planner.plan(extracted_info)
@@ -133,7 +136,7 @@ class TechSpecPipeline:
             if self.llm_service:
                 # Use LLM for spec generation
                 spec = self.llm_service.generate_tech_spec(architecture_plan, extracted_info, guidelines)
-                logger.info("Technical specification generated using LLM")
+                logger.info("Technical specification generated using LLM with domain context")
             else:
                 # Use template-based generator
                 spec = self.spec_generator.generate_spec(architecture_plan, extracted_info)
@@ -144,6 +147,20 @@ class TechSpecPipeline:
             with open(spec_output_path, 'w', encoding='utf-8') as f:
                 f.write(spec)
             logger.info(f"Technical specification saved to: {spec_output_path}")
+            
+            # Step 5: Generate code examples if requested
+            if self.config.get('generate_code_examples', False) and self.llm_service:
+                code_examples = self.llm_service.generate_code_examples(spec)
+                code_examples_path = f"{output_path}_code_examples.md"
+                
+                # Format code examples as a markdown document
+                code_md = "# Code Examples\n\n"
+                for category, code in code_examples.items():
+                    code_md += f"## {category}\n\n{code}\n\n"
+                
+                with open(code_examples_path, 'w', encoding='utf-8') as f:
+                    f.write(code_md)
+                logger.info(f"Code examples saved to: {code_examples_path}")
             
             # Generate HTML version if requested
             if self.config.get('generate_html', False):
@@ -157,8 +174,12 @@ class TechSpecPipeline:
                 "plan_output": plan_output_path,
                 "spec_output": spec_output_path,
                 "timestamp": get_timestamp(),
-                "success": True
+                "success": True,
+                "domain_context_used": True if self.llm_service else False
             }
+            
+            if self.config.get('generate_code_examples', False) and self.llm_service:
+                results["code_examples_output"] = code_examples_path
             
             return results
             
@@ -213,6 +234,8 @@ def main():
     parser.add_argument("--config", "-c", help="Configuration file path")
     parser.add_argument("--openai-key", help="OpenAI API key (overrides env var and config)")
     parser.add_argument("--html", action="store_true", help="Generate HTML output in addition to Markdown")
+    parser.add_argument("--code-examples", action="store_true", help="Generate code examples for the technical spec")
+    parser.add_argument("--repo-context", help="Path to repository context directory")
     
     args = parser.parse_args()
     
@@ -228,6 +251,12 @@ def main():
     
     if args.html:
         config['generate_html'] = True
+    
+    if args.code_examples:
+        config['generate_code_examples'] = True
+    
+    if args.repo_context:
+        config['repo_context_dir'] = args.repo_context
     
     # Initialize pipeline
     pipeline = TechSpecPipeline(config)

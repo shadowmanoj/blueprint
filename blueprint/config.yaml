@@ -4,10 +4,16 @@
 input_dir: "input"
 output_dir: "output"
 context_dir: "context"
+repo_context_dir: "repo_context"
 
 # File paths
 repo_rules_path: "context/repo_rules.yaml"
 guidelines_path: "context/guidelines.md"
+
+# Domain Context Options
+use_domain_context: true
+search_repositories: false   # Set to true to search real repositories instead of static context files
+repositories_path: ""        # Path to directory containing repositories to search
 
 # OpenAI configuration
 # Either set OPENAI_API_KEY environment variable or uncomment and set below:
@@ -16,6 +22,7 @@ openai_model: "gpt-4o"
 
 # Output configuration
 generate_html: true
+generate_code_examples: true
 
 # LLM fallback settings
 use_fallback_if_no_api: true  # Use template-based generation if no API key is available
