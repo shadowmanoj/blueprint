@@ -212,90 +212,101 @@ def generate_tech_spec(architecture_plan, guideline_path):
     
     return response.choices[0].message.content
 
-def markdown_to_pdf(md_text, output_pdf_path):
-    # Convert to PDF using FPDF2
+def markdown_to_html(md_text, output_html_path):
     try:
-        pdf = FPDF()
-        pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.add_page()
+        # Try using the Python markdown module
+        try:
+            import markdown
+            html_content = markdown.markdown(
+                md_text,
+                extensions=['tables', 'fenced_code', 'codehilite']
+            )
+        except ImportError:
+            # If markdown module is not available, do a simple conversion
+            html_content = f"<pre>{md_text}</pre>"
         
-        # Set default font
-        pdf.set_font("Helvetica", size=12)
+        # Add CSS styling
+        styled_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Technical Specification</title>
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                    line-height: 1.6;
+                    padding: 40px;
+                    max-width: 900px;
+                    margin: 0 auto;
+                    color: #333;
+                }}
+                h1, h2, h3, h4 {{
+                    color: #0066cc;
+                    margin-top: 24px;
+                    margin-bottom: 16px;
+                }}
+                h1 {{ font-size: 28px; border-bottom: 1px solid #eee; padding-bottom: 10px; }}
+                h2 {{ font-size: 24px; border-bottom: 1px solid #eee; padding-bottom: 8px; }}
+                h3 {{ font-size: 20px; }}
+                h4 {{ font-size: 16px; }}
+                pre {{
+                    background-color: #f6f8fa;
+                    border-radius: 3px;
+                    padding: 16px;
+                    overflow: auto;
+                    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+                }}
+                code {{
+                    background-color: rgba(27, 31, 35, 0.05);
+                    border-radius: 3px;
+                    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+                    padding: 0.2em 0.4em;
+                }}
+                table {{
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin-bottom: 20px;
+                }}
+                table, th, td {{
+                    border: 1px solid #ddd;
+                }}
+                th, td {{
+                    padding: 12px;
+                    text-align: left;
+                }}
+                th {{
+                    background-color: #f2f2f2;
+                }}
+                blockquote {{
+                    border-left: 4px solid #ddd;
+                    padding-left: 16px;
+                    color: #666;
+                    margin-left: 0;
+                }}
+                ul, ol {{
+                    padding-left: 2em;
+                }}
+                img {{
+                    max-width: 100%;
+                }}
+            </style>
+        </head>
+        <body>
+            {html_content}
+        </body>
+        </html>
+        """
         
-        # Process markdown line by line
-        for line in md_text.split('\n'):
-            # Skip empty lines but add space
-            if not line.strip():
-                pdf.ln(5)
-                continue
+        # Save the HTML file
+        with open(output_html_path, 'w', encoding='utf-8') as f:
+            f.write(styled_html)
             
-            # Clean line - replace any non-ASCII characters
-            clean_line = ""
-            for char in line:
-                if ord(char) < 128:  # ASCII range
-                    clean_line += char
-                # Replace specific Unicode characters with ASCII equivalents
-                elif char == '•':
-                    clean_line += '-'  # Use hyphen instead of bullet
-                elif char == '–' or char == '—':
-                    clean_line += '-'  # Use normal hyphen for dashes
-                elif char == '"' or char == '"':
-                    clean_line += '"'  # Use straight quotes
-                elif char == ''' or char == ''':
-                    clean_line += "'"  # Use straight apostrophe
-                elif char == '…':
-                    clean_line += '...'  # Use three dots instead of ellipsis
-                else:
-                    clean_line += ' '  # Replace any other Unicode with space
-            
-            # Handle Markdown formatting
-            if clean_line.startswith('# '):
-                # H1 - Title
-                pdf.set_font("Helvetica", 'B', 24)
-                pdf.multi_cell(0, 12, text=clean_line[2:])
-                pdf.ln(10)
-                pdf.set_font("Helvetica", size=12)
-            
-            elif clean_line.startswith('## '):
-                # H2 - Section
-                pdf.set_font("Helvetica", 'B', 18)
-                pdf.multi_cell(0, 10, text=clean_line[3:])
-                pdf.ln(8)
-                pdf.set_font("Helvetica", size=12)
-            
-            elif clean_line.startswith('### '):
-                # H3 - Subsection
-                pdf.set_font("Helvetica", 'B', 14)
-                pdf.multi_cell(0, 10, text=clean_line[4:])
-                pdf.ln(6)
-                pdf.set_font("Helvetica", size=12)
-            
-            # Handle bullet points
-            elif clean_line.startswith('- ') or clean_line.startswith('* '):
-                pdf.set_font("Helvetica", size=12)
-                # Use plain hyphen instead of bullet
-                pdf.cell(5, 10, text="-")
-                pdf.multi_cell(0, 10, text=clean_line[2:])
-                pdf.ln(2)
-            
-            # Regular text
-            else:
-                pdf.set_font("Helvetica", size=12)
-                pdf.multi_cell(0, 10, text=clean_line)
-                pdf.ln(2)
-        
-        pdf.output(output_pdf_path)
-        print(f"✅ PDF created successfully at: {output_pdf_path}")
+        print(f"✅ HTML file created at: {output_html_path}")
         return True
         
     except Exception as e:
-        print(f"❌ PDF creation error: {e}")
-        
-        # If PDF creation fails, save as text file
-        text_path = output_pdf_path.replace('.pdf', '.txt')
-        with open(text_path, 'w', encoding='utf-8') as f:
-            f.write(md_text)
-        print(f"✅ Saved content as text file instead: {text_path}")
+        print(f"❌ Error creating HTML: {e}")
         return False
 
 # 🔁 Main pipeline
@@ -318,21 +329,27 @@ if __name__ == "__main__":
 
     print("📝 Step 5: Generating tech spec...")
     spec = generate_tech_spec(plan, GUIDELINE_PATH)
-    with open(os.path.join(OUTPUT_FOLDER, "final_spec.md"), "w") as f:
+
+    # Generate outputs
+    final_md_path = os.path.join(OUTPUT_FOLDER, "final_spec.md")
+    final_html_path = os.path.join(OUTPUT_FOLDER, "final_spec.html")
+
+    # Save the markdown
+    with open(final_md_path, "w", encoding="utf-8") as f:
         f.write(spec)
+    print(f"✅ Markdown spec saved at: {final_md_path}")
 
-    # Generate PDF from spec markdown
-    final_pdf_path = os.path.join(OUTPUT_FOLDER, "final_spec.pdf")
-    success = markdown_to_pdf(spec, final_pdf_path)
+    # Convert to HTML
+    success = markdown_to_html(spec, final_html_path)
 
-    if success:
-        print(f"📄 PDF created at: {final_pdf_path}")
-        # Open the PDF in browser
-        webbrowser.open(f"file://{os.path.abspath(final_pdf_path)}")
-    else:
-        # If PDF creation failed, open the text version
-        final_txt_path = final_pdf_path.replace('.pdf', '.txt')
-        print(f"📄 Text file created at: {final_txt_path}")
-        webbrowser.open(f"file://{os.path.abspath(final_txt_path)}")
+    # Determine which file to open
+    file_to_open = final_html_path if success else final_md_path
 
-    print("🎉 Pipeline complete! Check your browser to view the output.")
+    # Open the file in browser
+    try:
+        import webbrowser
+        webbrowser.open(f"file://{os.path.abspath(file_to_open)}")
+        print(f"🎉 Pipeline complete! Check your browser to view the output.")
+    except Exception as e:
+        print(f"Could not open browser: {e}")
+        print(f"🎉 Pipeline complete! Your file is available at: {file_to_open}")

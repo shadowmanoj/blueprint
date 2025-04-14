@@ -3,3 +3,6 @@ langchain
 pymupdf
 python-dotenv
 fpdf2
+markdown-pdf
+weasyprint
+markdown
