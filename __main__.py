@@ -10,6 +10,7 @@ import re
 INPUT_PATH = "input_docs/dcc_prd.pdf"
 REPO_PATH = "repo"
 GUIDELINE_PATH = "guidelines/spec_guidelines.md"
+TECH_SPEC_REVIEW_GUIDELINE_PATH = "guidelines/tech_spec_review_guidelines.md"
 OUTPUT_FOLDER = "outputs"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
@@ -212,103 +213,6 @@ def generate_tech_spec(architecture_plan, guideline_path):
     
     return response.choices[0].message.content
 
-def markdown_to_html(md_text, output_html_path):
-    try:
-        # Try using the Python markdown module
-        try:
-            import markdown
-            html_content = markdown.markdown(
-                md_text,
-                extensions=['tables', 'fenced_code', 'codehilite']
-            )
-        except ImportError:
-            # If markdown module is not available, do a simple conversion
-            html_content = f"<pre>{md_text}</pre>"
-        
-        # Add CSS styling
-        styled_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>Technical Specification</title>
-            <style>
-                body {{
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                    line-height: 1.6;
-                    padding: 40px;
-                    max-width: 900px;
-                    margin: 0 auto;
-                    color: #333;
-                }}
-                h1, h2, h3, h4 {{
-                    color: #0066cc;
-                    margin-top: 24px;
-                    margin-bottom: 16px;
-                }}
-                h1 {{ font-size: 28px; border-bottom: 1px solid #eee; padding-bottom: 10px; }}
-                h2 {{ font-size: 24px; border-bottom: 1px solid #eee; padding-bottom: 8px; }}
-                h3 {{ font-size: 20px; }}
-                h4 {{ font-size: 16px; }}
-                pre {{
-                    background-color: #f6f8fa;
-                    border-radius: 3px;
-                    padding: 16px;
-                    overflow: auto;
-                    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
-                }}
-                code {{
-                    background-color: rgba(27, 31, 35, 0.05);
-                    border-radius: 3px;
-                    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
-                    padding: 0.2em 0.4em;
-                }}
-                table {{
-                    border-collapse: collapse;
-                    width: 100%;
-                    margin-bottom: 20px;
-                }}
-                table, th, td {{
-                    border: 1px solid #ddd;
-                }}
-                th, td {{
-                    padding: 12px;
-                    text-align: left;
-                }}
-                th {{
-                    background-color: #f2f2f2;
-                }}
-                blockquote {{
-                    border-left: 4px solid #ddd;
-                    padding-left: 16px;
-                    color: #666;
-                    margin-left: 0;
-                }}
-                ul, ol {{
-                    padding-left: 2em;
-                }}
-                img {{
-                    max-width: 100%;
-                }}
-            </style>
-        </head>
-        <body>
-            {html_content}
-        </body>
-        </html>
-        """
-        
-        # Save the HTML file
-        with open(output_html_path, 'w', encoding='utf-8') as f:
-            f.write(styled_html)
-            
-        print(f"✅ HTML file created at: {output_html_path}")
-        return True
-        
-    except Exception as e:
-        print(f"❌ Error creating HTML: {e}")
-        return False
-
 # 🔁 Main pipeline
 if __name__ == "__main__":
     print("🔍 Step 1: Extracting PRD...")
@@ -337,19 +241,5 @@ if __name__ == "__main__":
     # Save the markdown
     with open(final_md_path, "w", encoding="utf-8") as f:
         f.write(spec)
-    print(f"✅ Markdown spec saved at: {final_md_path}")
 
-    # Convert to HTML
-    success = markdown_to_html(spec, final_html_path)
-
-    # Determine which file to open
-    file_to_open = final_html_path if success else final_md_path
-
-    # Open the file in browser
-    try:
-        import webbrowser
-        webbrowser.open(f"file://{os.path.abspath(file_to_open)}")
-        print(f"🎉 Pipeline complete! Check your browser to view the output.")
-    except Exception as e:
-        print(f"Could not open browser: {e}")
-        print(f"🎉 Pipeline complete! Your file is available at: {file_to_open}")
+    print("✅ All done! Outputs saved in the outputs/ folder.")

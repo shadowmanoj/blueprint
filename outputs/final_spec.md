@@ -1,4 +1,4 @@
-# Technical Specification: Payment System Enhancements
+# Payments System Technical Specification
 
 ## Document Information
 
@@ -12,193 +12,213 @@
 
 ## Introduction
 
-This document outlines the technical specification for enhancing the payment system to support new features, including card-not-present transactions, fraud detection, payment analytics, and customer notifications. The enhancements are designed to ensure modularity, scalability, and maintainability while leveraging the existing `Payments Card Present (PCP)` service.
+This document outlines the technical specification for the Payments System, focusing on the **Payments Card Present (PCP)** service and proposed new services, including **Payments Card Not Present (PCNP)**, **Fraud Detection and Risk Management**, and **Payment Analytics and Reporting**. The system is designed to handle both card-present and card-not-present transactions, ensuring scalability, security, and operational insights.
 
 ### Acronyms and Definitions
-- **PCP**: Payments Card Present - Existing service for handling physical card transactions.
-- **PCNP**: Payments Card Not Present - Proposed service for handling online transactions.
-- **FDS**: Fraud Detection Service - Proposed service for detecting fraudulent transactions.
-- **PAS**: Payment Analytics Service - Proposed service for payment data insights.
-- **NS**: Notification Service - Proposed service for customer notifications.
+
+- **PCP**: Payments Card Present
+- **PCNP**: Payments Card Not Present
+- **Tokenization**: The process of replacing sensitive data with unique identifiers (tokens) for security.
+- **Fraud Detection**: Techniques and algorithms used to identify and prevent fraudulent transactions.
 
 ---
 
 ## System Architecture
 
-### High-Level Architecture
+### High-Level Overview
 
-The system will consist of the following services:
+The system consists of the following services:
 
 1. **Payments Card Present (PCP)**: Handles physical card transactions.
-2. **Payments Card Not Present (PCNP)**: Handles online transactions.
-3. **Fraud Detection Service (FDS)**: Detects and prevents fraudulent transactions.
-4. **Payment Analytics Service (PAS)**: Aggregates and analyzes payment data.
-5. **Notification Service (NS)**: Sends customer notifications.
+2. **Payments Card Not Present (PCNP)**: Manages online and recurring billing transactions.
+3. **Fraud Detection and Risk Management**: Provides real-time fraud prevention and risk scoring.
+4. **Payment Analytics and Reporting**: Offers insights, dashboards, and compliance reporting.
 
-#### Architecture Diagram
+### Architecture Diagram
 
 ```plaintext
-+-------------------------+
-| Payments Card Present   | <-- Handles card-present transactions
-| (PCP)                  |
-+-------------------------+
-          |
-          v
-+-------------------------+
-| Payments Card Not       | <-- Handles card-not-present transactions
-| Present (PCNP)          |
-+-------------------------+
-          |
-          v
-+-------------------------+
-| Fraud Detection Service | <-- Detects fraud across all transactions
-| (FDS)                  |
-+-------------------------+
-          |
-          v
-+-------------------------+
-| Payment Analytics       | <-- Provides analytics and insights
-| Service (PAS)           |
-+-------------------------+
-          |
-          v
-+-------------------------+
-| Notification Service    | <-- Sends customer notifications
-| (NS)                   |
-+-------------------------+
++-----------------------------+
+|   Payments Card Present     |
+|      (PCP Service)          |
+| - Card-present transactions |
+| - Validation, initiation    |
+| - Confirmation, refunds     |
++-----------------------------+
+            |
+            v
++-----------------------------+
+| Payments Card Not Present   |
+|      (PCNP Service)         |
+| - Online transactions       |
+| - Tokenization              |
+| - Fraud detection           |
++-----------------------------+
+            |
+            v
++-----------------------------+
+| Fraud Detection & Risk Mgmt |
+|      (Shared Service)       |
+| - Risk scoring              |
+| - Suspicious pattern checks |
+| - Real-time fraud prevention|
++-----------------------------+
+            |
+            v
++-----------------------------+
+| Payment Analytics &         |
+| Reporting Service           |
+| - Transaction insights      |
+| - Dashboards and reports    |
+| - Compliance support        |
++-----------------------------+
 ```
+
+### Component Responsibilities
+
+#### Payments Card Present (PCP)
+- **Responsibilities**:
+  - Process card-present transactions.
+  - Validate card details.
+  - Manage the payment lifecycle (initiation, confirmation, refunds).
+  - Provide payment status updates.
+
+#### Payments Card Not Present (PCNP)
+- **Responsibilities**:
+  - Handle online and recurring billing transactions.
+  - Perform tokenization for card security.
+  - Integrate with third-party payment gateways.
+  - Detect and prevent fraud in online transactions.
+
+#### Fraud Detection and Risk Management
+- **Responsibilities**:
+  - Monitor transactions for suspicious patterns.
+  - Assign risk scores to transactions.
+  - Provide real-time fraud prevention.
+  - Integrate with PCP and PCNP services.
+
+#### Payment Analytics and Reporting
+- **Responsibilities**:
+  - Generate transaction reports (volume, success rates, refunds).
+  - Provide real-time dashboards for merchants.
+  - Support compliance and audit requirements.
+
+### Integration Points
+- PCP and PCNP services integrate with Fraud Detection for real-time fraud prevention.
+- All transaction data flows into Payment Analytics for centralized insights.
 
 ---
 
 ## Detailed Design
 
-### Payments Card Not Present (PCNP)
-#### Responsibilities
-- Handle online transactions.
-- Validate card-not-present payments.
-- Process refunds for online transactions.
-- Integrate fraud detection mechanisms.
+### PCP Service
 
-#### API Documentation
-| Endpoint | Method | Description | Authentication | Rate Limit |
-|----------|--------|-------------|----------------|------------|
-| `/pcnp/validate` | POST | Validate card-not-present transaction | Required | 100 requests/min |
-| `/pcnp/initiate` | POST | Initiate payment | Required | 100 requests/min |
-| `/pcnp/refund` | POST | Process refund | Required | 50 requests/min |
-| `/pcnp/status` | GET | Check payment status | Required | 100 requests/min |
+#### API Endpoints
+- **POST /transactions**
+  - **Description**: Initiates a card-present transaction.
+  - **Request Parameters**:
+    - `card_number` (string): Card number.
+    - `expiry_date` (string): Expiry date in MM/YY format.
+    - `amount` (decimal): Transaction amount.
+  - **Response**:
+    - `transaction_id` (string): Unique identifier for the transaction.
+    - `status` (string): Transaction status (`success`, `failure`).
+  - **Error Responses**:
+    - `400`: Invalid input.
+    - `500`: Internal server error.
+
+- **GET /transactions/{transaction_id}/status**
+  - **Description**: Retrieves the status of a transaction.
+  - **Response**:
+    - `status` (string): Transaction status (`pending`, `completed`, `failed`).
 
 #### Data Model
-| Entity | Attributes | Description |
-|--------|------------|-------------|
-| `Transaction` | `transaction_id`, `amount`, `currency`, `status`, `timestamp` | Represents a payment transaction |
-| `Refund` | `refund_id`, `transaction_id`, `amount`, `status`, `timestamp` | Represents a refund |
+- **Transaction Entity**:
+  - `transaction_id` (string): Unique identifier.
+  - `card_number` (string): Masked card number.
+  - `amount` (decimal): Transaction amount.
+  - `status` (string): Status of the transaction.
 
 ---
 
-### Fraud Detection Service (FDS)
-#### Responsibilities
-- Analyze transaction patterns for fraud detection.
-- Provide APIs for fraud status checks and reporting.
-- Use machine learning models to detect anomalies.
+### PCNP Service
 
-#### API Documentation
-| Endpoint | Method | Description | Authentication | Rate Limit |
-|----------|--------|-------------|----------------|------------|
-| `/fds/analyze` | POST | Analyze transaction for fraud | Required | 200 requests/min |
-| `/fds/report` | GET | Retrieve fraud analysis report | Required | 50 requests/min |
+#### API Endpoints
+- **POST /online-transactions**
+  - **Description**: Initiates a card-not-present transaction.
+  - **Request Parameters**:
+    - `token` (string): Tokenized card data.
+    - `amount` (decimal): Transaction amount.
+  - **Response**:
+    - `transaction_id` (string): Unique identifier for the transaction.
+    - `status` (string): Transaction status (`success`, `failure`).
 
-#### Data Model
-| Entity | Attributes | Description |
-|--------|------------|-------------|
-| `FraudAnalysis` | `analysis_id`, `transaction_id`, `risk_score`, `status`, `timestamp` | Represents fraud analysis results |
-
----
-
-### Payment Analytics Service (PAS)
-#### Responsibilities
-- Aggregate transaction data from PCP and PCNP.
-- Generate insights and reports.
-- Provide APIs for querying analytics data.
-
-#### API Documentation
-| Endpoint | Method | Description | Authentication | Rate Limit |
-|----------|--------|-------------|----------------|------------|
-| `/pas/aggregate` | POST | Aggregate payment data | Required | 100 requests/min |
-| `/pas/report` | GET | Retrieve analytics report | Required | 50 requests/min |
-
-#### Data Model
-| Entity | Attributes | Description |
-|--------|------------|-------------|
-| `AnalyticsReport` | `report_id`, `time_range`, `metrics`, `timestamp` | Represents an analytics report |
+- **POST /tokenize**
+  - **Description**: Tokenizes sensitive card data.
+  - **Request Parameters**:
+    - `card_number` (string): Card number.
+    - `expiry_date` (string): Expiry date.
+  - **Response**:
+    - `token` (string): Tokenized representation of the card.
 
 ---
 
-### Notification Service (NS)
-#### Responsibilities
-- Send notifications for payment confirmations, refunds, and fraud alerts.
-- Support multiple channels (email, SMS, push notifications).
+### Fraud Detection and Risk Management
 
-#### API Documentation
-| Endpoint | Method | Description | Authentication | Rate Limit |
-|----------|--------|-------------|----------------|------------|
-| `/ns/send` | POST | Send notification | Required | 500 requests/min |
-| `/ns/status` | GET | Check notification status | Required | 100 requests/min |
-
-#### Data Model
-| Entity | Attributes | Description |
-|--------|------------|-------------|
-| `Notification` | `notification_id`, `recipient`, `message`, `channel`, `status`, `timestamp` | Represents a notification |
+#### Key Algorithms
+- **Risk Scoring**:
+  - Inputs: Transaction amount, card usage history, location.
+  - Outputs: Risk score (0-100).
+- **Suspicious Pattern Detection**:
+  - Uses machine learning to identify anomalies in transaction data.
 
 ---
 
 ## Non-Functional Requirements
 
-1. **Scalability**: All services must scale horizontally to handle increased transaction volume.
-2. **Reliability**: Ensure 99.99% uptime for all services.
-3. **Security**: Implement robust authentication and encryption mechanisms.
-4. **Performance**: Response time for APIs should not exceed 200ms under normal load.
-5. **Observability**: Set up monitoring and logging for all services.
+1. **Scalability**:
+   - Services must handle up to 1,000 transactions per second.
+2. **Security**:
+   - Use AES-256 encryption for sensitive data.
+   - Comply with PCI DSS standards.
+3. **Availability**:
+   - Ensure 99.99% uptime for all services.
+4. **Performance**:
+   - API response time must not exceed 200ms for 95% of requests.
 
 ---
 
 ## Implementation Plan
 
-1. **Design Phase**:
-   - Finalize API specifications.
-   - Create detailed data models.
-   - Develop architecture diagrams.
-
-2. **Development Phase**:
-   - Implement PCNP, FDS, PAS, and NS services.
-   - Enhance PCP service for integration with new services.
-
-3. **Testing Phase**:
-   - Unit testing for individual services.
-   - Integration testing across all services.
-   - Load testing for scalability validation.
-
-4. **Deployment Phase**:
-   - Deploy services to staging environment.
-   - Conduct user acceptance testing.
-   - Deploy services to production environment.
-
-5. **Monitoring and Maintenance**:
-   - Set up observability tools.
-   - Define incident response protocols.
-   - Regularly update fraud detection models.
+1. **Phase 1**: Implement PCP service.
+   - Develop API endpoints.
+   - Set up database schema for transactions.
+2. **Phase 2**: Implement PCNP service.
+   - Develop tokenization and online transaction APIs.
+   - Integrate with third-party payment gateways.
+3. **Phase 3**: Develop Fraud Detection and Risk Management.
+   - Build risk scoring and anomaly detection algorithms.
+4. **Phase 4**: Build Payment Analytics and Reporting.
+   - Create dashboards and reporting tools.
 
 ---
 
 ## Appendices
 
-### Appendix A: Glossary
-- **Card-Present Transaction**: A payment made using a physical card at a point-of-sale terminal.
-- **Card-Not-Present Transaction**: A payment made online or over the phone, without a physical card.
+### Appendix A: Compliance Standards
+- PCI DSS
+- GDPR
 
-### Appendix B: References
-- OpenAPI Specification: [Link]
-- Entity-Relationship Diagram Tool: [Link]
+### Appendix B: Sample Data
+- **Transaction**:
+  ```json
+  {
+    "transaction_id": "abc123",
+    "card_number": "**** **** **** 1234",
+    "amount": 100.00,
+    "status": "completed"
+  }
+  ```
 
 ---
 
-This technical specification provides a comprehensive plan for enhancing the payment system to support new features while maintaining scalability, reliability, and security.
+This technical specification provides a comprehensive plan for implementing the Payments System, ensuring it meets functional and non-functional requirements while maintaining scalability and security.
