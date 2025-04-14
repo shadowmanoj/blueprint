@@ -12,6 +12,7 @@ REPO_PATH = "repo"
 GUIDELINE_PATH = "guidelines/spec_guidelines.md"
 OUTPUT_FOLDER = "outputs"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+TECH_SPEC_REVIEW_GUIDELINE_PATH = "guidelines/tech_spec_review_guidelines.md"
 
 # ✅ Create shared LLM instance
 OPENAI_API_KEY = "2RUOScQCo243qls9wgMaPBjwZ5LH3GENFPKjwTOkLZDPKm5Wh0icJQQJ99BDAC77bzfXJ3w3AAABACOGjxKB"  # keep this secret
@@ -32,7 +33,6 @@ def extract_pdf_text(file_path):
 
 # Step 2: Analyze PRD → Structured Info
 def analyze_prd(prd_text):
-    print(f"Starting PRD analysis with text length: {len(prd_text)} characters")
     system_instruction = (
         "You are a Senior Principal Engineer analyzing a Product Requirements Document (PRD). "
     "Your goal is to extract precise, actionable technical insights from the PRD. "
@@ -78,8 +78,6 @@ def analyze_prd(prd_text):
             # Regular JSON parsing
             result = json.loads(raw_content)
             
-        print(f"Successfully parsed LLM response into JSON")
-        print(json.dumps(result, indent=2))
         return result
     except json.JSONDecodeError as e:
         print(f"Failed to parse LLM response as JSON: {e}")
@@ -309,6 +307,68 @@ def markdown_to_html(md_text, output_html_path):
         print(f"❌ Error creating HTML: {e}")
         return False
 
+def analyze_tech_spec(tech_spec_text):
+    system_instruction = (
+        "You are a technical spec analyzer. Your job is to extract structured insights from a technical specification document. "
+        "Parse and summarize the document into the following keys in JSON format: "
+        "1. 'domain' - the problem space and business context, "
+        "2. 'features' - a list of user-facing or backend features mentioned, "
+        "3. 'goals' - engineering or design objectives stated in the spec, "
+        "4. 'apis' - a list of any public-facing or internal APIs referenced or proposed. "
+        "Return only a valid JSON object with keys: domain, features, goals, apis."
+    )
+    response = client.chat.completions.create(
+        model=AZURE_DEPLOYMENT,
+        messages=[
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": prd_text}
+        ],
+        temperature=0.3
+    )
+    try:
+        return json.loads(response.choices[0].message.content)
+    except json.JSONDecodeError:
+        return {"error": "Invalid JSON", "raw": response.choices[0].message.content}
+    
+def tech_spec_plan_architecture(extracted_info, repo_context):
+    feature_text = "\n".join(f"- {f}" for f in extracted_info.get("features", []))
+    repo_summary = "\n".join([f"{k}: {v[:300]}..." for k, v in repo_context.items()])
+    system_instruction = (
+        "You are a system architect AI. Given extracted features and the current codebase context, "
+        "map each feature to an existing service (if possible) or propose new services/components. "
+        "Return a clear, high-level system architecture plan in **Markdown format**, including service names, data flow, and responsibilities. "
+        "Avoid implementation details — focus on structure, integration, and ownership."
+    )
+    response = client.chat.completions.create(
+        model=AZURE_DEPLOYMENT,
+        messages=[
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": f"Features:\n{feature_text}\n\nRepo Context:\n{repo_summary}"}
+        ],
+        temperature=0.3
+    )
+    return response.choices[0].message.content
+
+def review_tech_spec(architecture_plan, guideline_path):
+    with open(guideline_path, "r") as f:
+        guidelines = f.read()
+    system_instruction = (
+        "You are a technical writer and reviewer assistant. Given a system architecture plan and internal spec guidelines, "
+        "compose a full technical specification in Markdown format. Ensure the spec is clear, well-structured, and adheres to the provided guidelines. "
+        "Include sections such as Overview, Features, Architecture Diagram (if described), API Contracts (if mentioned), and Open Questions. "
+        "Make the output suitable for internal team review or handoff to engineering."
+    )
+    response = client.chat.completions.create(
+        model=AZURE_DEPLOYMENT,
+        messages=[
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": f"Architecture Plan:\n{architecture_plan}\n\nGuidelines:\n{guidelines}"}
+        ],
+        temperature=0.3
+    )
+    return response.choices[0].message.content
+
+
 # 🔁 Main pipeline
 if __name__ == "__main__":
     print("🔍 Step 1: Extracting PRD...")
@@ -330,6 +390,17 @@ if __name__ == "__main__":
     print("📝 Step 5: Generating tech spec...")
     spec = generate_tech_spec(plan, GUIDELINE_PATH)
 
+    print(":brain: Step 6: Analyzing Tech Spec...")
+    tech_spec_review_structured = analyze_tech_spec(spec)
+    with open(os.path.join(OUTPUT_FOLDER, "tech_spec_review_structured.json"), "w") as f:
+        json.dump(tech_spec_review_structured, f, indent=2)
+    print(":bricks: Step 7: Planning architecture...")
+    tech_spec_review_plan = tech_spec_plan_architecture(tech_spec_review_structured, repo_context)
+    with open(os.path.join(OUTPUT_FOLDER, "tech_spec_review_architecture_plan.md"), "w") as f:
+        f.write(tech_spec_review_plan)
+    print(":memo: Step 8: Generating tech spec review...")
+    spec2 = review_tech_spec(tech_spec_review_plan, TECH_SPEC_REVIEW_GUIDELINE_PATH)
+
     # Generate outputs
     final_md_path = os.path.join(OUTPUT_FOLDER, "final_spec.md")
     final_html_path = os.path.join(OUTPUT_FOLDER, "final_spec.html")
@@ -341,6 +412,7 @@ if __name__ == "__main__":
 
     # Convert to HTML
     success = markdown_to_html(spec, final_html_path)
+    markdown_to_html(spec2, final_html_path)
 
     # Determine which file to open
     file_to_open = final_html_path if success else final_md_path
