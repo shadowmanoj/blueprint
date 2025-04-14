@@ -1,17 +1,14 @@
 import os
 import fitz  # PyMuPDF
 import json
-from langchain_openai import ChatOpenAI
+from openai import AzureOpenAI
 
 # CONFIG
 INPUT_PATH = "input_docs/dcc_prd.pdf"
 REPO_PATH = "repo"
-GUIDELINE_PATH = "guidelines/spec_guidelines.txt"
+GUIDELINE_PATH = "guidelines/spec_guidelines.md"
 OUTPUT_FOLDER = "outputs"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-
-# 🔐 Azure OpenAI credentials
-OPENAI_API_BASE = "https://your-endpoint.openai.azure.com/openai/deployments/Blueprint/chat/completions?api-version=2025-01-01-preview"
 
 # ✅ Create shared LLM instance
 OPENAI_API_KEY = "2RUOScQCo243qls9wgMaPBjwZ5LH3GENFPKjwTOkLZDPKm5Wh0icJQQJ99BDAC77bzfXJ3w3AAABACOGjxKB"  # keep this secret
@@ -19,17 +16,12 @@ AZURE_ENDPOINT = "https://fy26-hackon-q1.openai.azure.com"
 AZURE_DEPLOYMENT = "Blueprint"
 API_VERSION = "2025-01-01-preview"
 
-llm = ChatOpenAI(
-    model="gpt-4",  # Model is ignored, but required
-    temperature=0.3,
-    openai_api_key=OPENAI_API_KEY,
-    model_kwargs={
-        "api_type": "azure",
-        "api_base": AZURE_ENDPOINT,
-        "api_version": API_VERSION,
-        "deployment_name": AZURE_DEPLOYMENT
-    }
+client = AzureOpenAI(
+    api_key=OPENAI_API_KEY,
+    azure_endpoint=AZURE_ENDPOINT,
+    api_version=API_VERSION
 )
+
 # Step 1: Extract text from PRD PDF
 def extract_pdf_text(file_path):
     with fitz.open(file_path) as doc:
@@ -42,15 +34,20 @@ def analyze_prd(prd_text):
         "Extract the domain/business context, list of features, engineering goals, and any relevant APIs. "
         "Output only JSON with the following keys: domain, features, goals, apis"
     )
-    messages = [
-        {"role": "system", "content": system_instruction},
-        {"role": "user", "content": prd_text}
-    ]
-    response = llm.invoke(messages)
+    
+    response = client.chat.completions.create(
+        model=AZURE_DEPLOYMENT,
+        messages=[
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": prd_text}
+        ],
+        temperature=0.3
+    )
+    
     try:
-        return json.loads(response.content)
+        return json.loads(response.choices[0].message.content)
     except json.JSONDecodeError:
-        return {"error": "Invalid JSON", "raw": response.content}
+        return {"error": "Invalid JSON", "raw": response.choices[0].message.content}
 
 # Step 3: Load repo context
 def load_repo_context(repo_path):
@@ -75,12 +72,16 @@ def plan_architecture(extracted_info, repo_context):
         "Return a high-level system architecture plan in Markdown format."
     )
 
-    messages = [
-        {"role": "system", "content": system_instruction},
-        {"role": "user", "content": f"Features:\n{feature_text}\n\nRepo Context:\n{repo_summary}"}
-    ]
-    response = llm.invoke(messages)
-    return response.content
+    response = client.chat.completions.create(
+        model=AZURE_DEPLOYMENT,
+        messages=[
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": f"Features:\n{feature_text}\n\nRepo Context:\n{repo_summary}"}
+        ],
+        temperature=0.3
+    )
+    
+    return response.choices[0].message.content
 
 # Step 5: Generate tech spec
 def generate_tech_spec(architecture_plan, guideline_path):
@@ -92,12 +93,16 @@ def generate_tech_spec(architecture_plan, guideline_path):
         "to generate a complete technical spec in structured Markdown format."
     )
 
-    messages = [
-        {"role": "system", "content": system_instruction},
-        {"role": "user", "content": f"Architecture Plan:\n{architecture_plan}\n\nGuidelines:\n{guidelines}"}
-    ]
-    response = llm.invoke(messages)
-    return response.content
+    response = client.chat.completions.create(
+        model=AZURE_DEPLOYMENT,
+        messages=[
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": f"Architecture Plan:\n{architecture_plan}\n\nGuidelines:\n{guidelines}"}
+        ],
+        temperature=0.3
+    )
+    
+    return response.choices[0].message.content
 
 # 🔁 Main pipeline
 if __name__ == "__main__":
