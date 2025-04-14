@@ -2,3 +2,4 @@ openai
 langchain
 pymupdf
 python-dotenv
+fpdf2

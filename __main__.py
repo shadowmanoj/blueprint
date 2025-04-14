@@ -1,7 +1,10 @@
 import os
 import fitz  # PyMuPDF
 import json
+import webbrowser  # Add this import
 from openai import AzureOpenAI
+from fpdf import FPDF
+import re
 
 # CONFIG
 INPUT_PATH = "input_docs/dcc_prd.pdf"
@@ -209,6 +212,92 @@ def generate_tech_spec(architecture_plan, guideline_path):
     
     return response.choices[0].message.content
 
+def markdown_to_pdf(md_text, output_pdf_path):
+    # Convert to PDF using FPDF2
+    try:
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+        
+        # Set default font
+        pdf.set_font("Helvetica", size=12)
+        
+        # Process markdown line by line
+        for line in md_text.split('\n'):
+            # Skip empty lines but add space
+            if not line.strip():
+                pdf.ln(5)
+                continue
+            
+            # Clean line - replace any non-ASCII characters
+            clean_line = ""
+            for char in line:
+                if ord(char) < 128:  # ASCII range
+                    clean_line += char
+                # Replace specific Unicode characters with ASCII equivalents
+                elif char == '•':
+                    clean_line += '-'  # Use hyphen instead of bullet
+                elif char == '–' or char == '—':
+                    clean_line += '-'  # Use normal hyphen for dashes
+                elif char == '"' or char == '"':
+                    clean_line += '"'  # Use straight quotes
+                elif char == ''' or char == ''':
+                    clean_line += "'"  # Use straight apostrophe
+                elif char == '…':
+                    clean_line += '...'  # Use three dots instead of ellipsis
+                else:
+                    clean_line += ' '  # Replace any other Unicode with space
+            
+            # Handle Markdown formatting
+            if clean_line.startswith('# '):
+                # H1 - Title
+                pdf.set_font("Helvetica", 'B', 24)
+                pdf.multi_cell(0, 12, text=clean_line[2:])
+                pdf.ln(10)
+                pdf.set_font("Helvetica", size=12)
+            
+            elif clean_line.startswith('## '):
+                # H2 - Section
+                pdf.set_font("Helvetica", 'B', 18)
+                pdf.multi_cell(0, 10, text=clean_line[3:])
+                pdf.ln(8)
+                pdf.set_font("Helvetica", size=12)
+            
+            elif clean_line.startswith('### '):
+                # H3 - Subsection
+                pdf.set_font("Helvetica", 'B', 14)
+                pdf.multi_cell(0, 10, text=clean_line[4:])
+                pdf.ln(6)
+                pdf.set_font("Helvetica", size=12)
+            
+            # Handle bullet points
+            elif clean_line.startswith('- ') or clean_line.startswith('* '):
+                pdf.set_font("Helvetica", size=12)
+                # Use plain hyphen instead of bullet
+                pdf.cell(5, 10, text="-")
+                pdf.multi_cell(0, 10, text=clean_line[2:])
+                pdf.ln(2)
+            
+            # Regular text
+            else:
+                pdf.set_font("Helvetica", size=12)
+                pdf.multi_cell(0, 10, text=clean_line)
+                pdf.ln(2)
+        
+        pdf.output(output_pdf_path)
+        print(f"✅ PDF created successfully at: {output_pdf_path}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ PDF creation error: {e}")
+        
+        # If PDF creation fails, save as text file
+        text_path = output_pdf_path.replace('.pdf', '.txt')
+        with open(text_path, 'w', encoding='utf-8') as f:
+            f.write(md_text)
+        print(f"✅ Saved content as text file instead: {text_path}")
+        return False
+
 # 🔁 Main pipeline
 if __name__ == "__main__":
     print("🔍 Step 1: Extracting PRD...")
@@ -232,4 +321,18 @@ if __name__ == "__main__":
     with open(os.path.join(OUTPUT_FOLDER, "final_spec.md"), "w") as f:
         f.write(spec)
 
-    print("✅ All done! Outputs saved in the outputs/ folder.")
+    # Generate PDF from spec markdown
+    final_pdf_path = os.path.join(OUTPUT_FOLDER, "final_spec.pdf")
+    success = markdown_to_pdf(spec, final_pdf_path)
+
+    if success:
+        print(f"📄 PDF created at: {final_pdf_path}")
+        # Open the PDF in browser
+        webbrowser.open(f"file://{os.path.abspath(final_pdf_path)}")
+    else:
+        # If PDF creation failed, open the text version
+        final_txt_path = final_pdf_path.replace('.pdf', '.txt')
+        print(f"📄 Text file created at: {final_txt_path}")
+        webbrowser.open(f"file://{os.path.abspath(final_txt_path)}")
+
+    print("🎉 Pipeline complete! Check your browser to view the output.")
