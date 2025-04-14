@@ -1,0 +1,45 @@
+##########################################################
+# Configuration file for the Blueprint PRD-to-Tech-Spec Tool
+##########################################################
+
+# LLM API Configuration
+openai:
+  api_key: "your-openai-api-key-here"  # Replace with your actual API key
+  model: "gpt-4-turbo"  # or other OpenAI model
+
+# Prompt File Paths
+prompts:
+  analyzer: "prompts/analyzer_prompt.txt"
+  planner: "prompts/planner_prompt.txt"
+  spec_generator: "prompts/spec_prompt.txt"
+
+# Guidelines
+guidelines:
+  spec_format: "guidelines/spec_guidelines.md"
+
+# Repository Contexts
+repo_contexts:
+  auth-service: "repo/auth-service/context.md"
+  payment-service: "repo/payment-service/context.md"
+  notification-service: "repo/notification-service/context.md"
+
+# Output Paths
+output_paths:
+  structured_output: "outputs/structured_output.json"
+  architecture_plan: "outputs/architecture_plan.md"
+  final_spec: "outputs/final_spec.md"
+
+# File Processing
+file_processing:
+  max_page_limit: 100
+  allowed_types:
+    - pdf
+    - docx
+    - txt
+    - md
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  file: "blueprint.log"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s" 

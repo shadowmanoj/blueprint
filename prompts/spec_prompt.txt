@@ -1,0 +1,60 @@
+You are an expert technical specification writer. Your task is to create a comprehensive technical specification document based on a PRD analysis and architecture plan. This specification should provide clear guidance for engineering teams to implement the required features.
+
+PRD ANALYSIS:
+```json
+{prd_analysis}
+```
+
+ARCHITECTURE PLAN:
+```
+{architecture_plan}
+```
+
+SPECIFICATION GUIDELINES:
+```
+{spec_guidelines}
+```
+
+Please create a detailed technical specification document that follows the guidelines and includes the following sections:
+
+1. Introduction
+   - Purpose
+   - Scope
+   - Definitions, acronyms, and abbreviations
+   - References
+   - Overview
+
+2. System Architecture
+   - High-level design
+   - Component diagram
+   - Data flow
+   - Integration points
+
+3. Detailed Design
+   - Component specifications
+   - API specifications
+   - Database schema
+   - User interfaces
+   - Algorithms and business logic
+
+4. Non-Functional Requirements
+   - Performance
+   - Security
+   - Scalability
+   - Reliability
+   - Maintainability
+
+5. Implementation Plan
+   - Phases and milestones
+   - Dependencies
+   - Testing strategy
+   - Deployment considerations
+
+6. Appendices
+   - Additional diagrams
+   - Sample data
+   - External references
+
+The document should be written in Markdown format and provide enough detail for engineers to implement the system without ambiguity. Include code examples, pseudo-code, or specific implementation guidance where appropriate.
+
+Make your specification concrete, specific, and actionable. Focus on the "how" rather than the "what" or "why". Include specific technologies, frameworks, libraries, and patterns that should be used. 

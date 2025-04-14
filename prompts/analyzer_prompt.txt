@@ -1,0 +1,58 @@
+You are an expert PRD Analyzer specialized in extracting structured information from Product Requirement Documents.
+
+Below is a Product Requirement Document (PRD) that you need to analyze. Your task is to extract key information and structure it in a way that can be used for technical specification generation.
+
+PRODUCT REQUIREMENT DOCUMENT:
+```
+{document_text}
+```
+
+Please analyze this document and extract the following information in a structured JSON format:
+
+1. Product Overview:
+   - Product name
+   - Product description
+   - Target audience
+   - Business goals
+   - Success metrics
+
+2. Functional Requirements:
+   - Core features
+   - User stories
+   - User flows
+   - Use cases
+   - Priority levels for each requirement
+
+3. Non-Functional Requirements:
+   - Performance requirements
+   - Scalability requirements
+   - Security requirements
+   - Compliance requirements
+   - Accessibility requirements
+
+4. Technical Constraints:
+   - Platform constraints
+   - Integration requirements
+   - Compatibility requirements
+   - Deployment requirements
+
+5. Data Requirements:
+   - Data entities
+   - Data relationships
+   - Data storage requirements
+   - Data processing requirements
+
+6. User Interface Requirements:
+   - UI components
+   - Design guidelines
+   - Responsive design requirements
+   - Interaction patterns
+
+7. Timeline and Milestones:
+   - Project phases
+   - Deadlines
+   - Dependencies
+
+For each section, include as much detail as available in the document. If information is not available for any section, indicate it with "Not specified in the document."
+
+Return your analysis in a JSON format with the structure matching the sections outlined above. 
