@@ -29,6 +29,7 @@ def extract_pdf_text(file_path):
 
 # Step 2: Analyze PRD → Structured Info
 def analyze_prd(prd_text):
+    print(f"Starting PRD analysis with text length: {len(prd_text)} characters")
     system_instruction = (
         "You are a product requirements document (PRD) analyzer. "
         "Extract the domain/business context, list of features, engineering goals, and any relevant APIs. "
@@ -41,12 +42,32 @@ def analyze_prd(prd_text):
             {"role": "system", "content": system_instruction},
             {"role": "user", "content": prd_text}
         ],
-        temperature=0.3
+        temperature=0.3,
+        response_format={"type": "json_object"}
     )
     
     try:
-        return json.loads(response.choices[0].message.content)
-    except json.JSONDecodeError:
+        # Get the raw content
+        raw_content = response.choices[0].message.content
+        
+        # Check if the content is wrapped in code blocks
+        if raw_content.startswith("```json") or raw_content.startswith("```"):
+            # Extract the JSON part by removing the code block markers
+            content_lines = raw_content.strip().split("\n")
+            if content_lines[0].startswith("```"):
+                content_lines = content_lines[1:-1]  # Remove first and last lines
+            clean_content = "\n".join(content_lines)
+            result = json.loads(clean_content)
+        else:
+            # Regular JSON parsing
+            result = json.loads(raw_content)
+            
+        print(f"Successfully parsed LLM response into JSON")
+        print(json.dumps(result, indent=2))
+        return result
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse LLM response as JSON: {e}")
+        print(f"Raw response: {response.choices[0].message.content[:200]}...")
         return {"error": "Invalid JSON", "raw": response.choices[0].message.content}
 
 # Step 3: Load repo context
