@@ -1,0 +1,100 @@
+# Repository Rules for Blueprint
+# Maps features/keywords to services and repositories
+
+services:
+  user_service:
+    description: "Handles user authentication, registration, and profile management"
+    keywords:
+      - auth
+      - authentication
+      - login
+      - register
+      - signup
+      - user profile
+      - user management
+    
+  payment_service:
+    description: "Handles payment processing and subscription management"
+    keywords:
+      - payment
+      - subscription
+      - billing
+      - invoice
+      - checkout
+      - pricing
+      - transaction
+  
+  notification_service:
+    description: "Handles email, SMS, and push notifications"
+    keywords:
+      - notification
+      - email
+      - sms
+      - push notification
+      - alert
+      - reminder
+  
+  content_service:
+    description: "Handles content creation, storage, and delivery"
+    keywords:
+      - content
+      - document
+      - file
+      - storage
+      - upload
+      - download
+      - media
+  
+  analytics_service:
+    description: "Handles data collection, processing, and reporting"
+    keywords:
+      - analytics
+      - reporting
+      - dashboard
+      - metrics
+      - statistics
+      - report
+  
+  search_service:
+    description: "Handles search functionality across the platform"
+    keywords:
+      - search
+      - indexing
+      - query
+      - filter
+      - sort
+      - search results
+
+tech_stacks:
+  frontend:
+    default:
+      - React
+      - TypeScript
+      - Redux
+      - Material UI
+  
+  backend:
+    default:
+      - Python
+      - FastAPI
+      - SQLAlchemy
+    alternatives:
+      - Node.js
+      - Express
+      - TypeORM
+  
+  database:
+    default:
+      - PostgreSQL
+    alternatives:
+      - MongoDB
+      - Redis (for caching)
+  
+  infrastructure:
+    default:
+      - Docker
+      - Kubernetes
+      - AWS
+    alternatives:
+      - GCP
+      - Azure 
