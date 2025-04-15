@@ -1,14 +1,28 @@
 # Blueprint
 
-Blueprint is an AI-powered technical specification generator that automatically transforms Product Requirements Documents (PRDs) into detailed technical specifications.
+Blueprint is an AI-powered technical specification generator that transforms Product Requirements Documents (PRDs) into implementation-ready technical specifications with code-level detail.
 
 ## Features
 
-- PDF text extraction
-- AI-powered PRD analysis
-- Architecture planning
-- Technical specification generation
-- Technical specification review
+- PDF text extraction from PRDs
+- AI-powered comprehensive PRD analysis
+- Detailed architecture planning with service mappings
+- **Production-ready technical specifications with actual code examples**:
+  - Complete function/method definitions with signatures
+  - Actual database schemas with SQL DDL statements
+  - Comprehensive API contracts with JSON examples
+  - Detailed sequence diagrams and workflows
+  - Extensive error handling and observability specifications
+
+## Benefits
+
+- Reduces spec creation time from weeks to minutes
+- Ensures consistent format and comprehensive coverage
+- Provides implementation-ready details engineers can code from directly
+- Includes 20+ code examples per specification
+- Features complete API contracts and database schemas
+- Incorporates detailed testing strategies and observability plans
+- Scales from 40-50 pages (8000-10000 words) of technical content
 
 ## Requirements
 
@@ -77,13 +91,21 @@ python blueprint.py --help
 
 All output files are saved to the `outputs` directory:
 
-- `structured_output.json` - Structured information extracted from the PRD
-- `architecture_plan.md` - High-level architecture plan
-- `final_spec.md` - Generated technical specification
-- `final_spec.html` - HTML version of the technical specification
-- `tech_spec_review_structured.json` - Structured information from review
-- `tech_spec_review_architecture_plan.md` - Review architecture plan
-- `review_spec.md` - Generated specification review
+- `structured_output.json` - Comprehensive structured information extracted from the PRD
+- `architecture_plan.md` - Detailed high-level architecture plan with component diagrams and implementation roadmap
+- `final_spec.md` - **Production-ready technical specification (40-50 pages, 8000-10000 words)** including:
+  - Actual code examples (20+ snippets)
+  - Complete function/method definitions
+  - SQL database schema definitions
+  - Comprehensive API contracts with request/response examples
+  - Detailed sequence diagrams
+  - Error handling strategies with error codes
+  - Observability specifications (logs, metrics, alerts)
+  - Testing strategies and test cases
+- `final_spec.html` - HTML version of the technical specification with proper formatting
+- `tech_spec_review_structured.json` - Comprehensive analysis of the technical specification
+- `tech_spec_review_architecture_plan.md` - Detailed architectural assessment and improvements
+- `review_spec.md` - Extensive specification review with actionable feedback
 - `review_spec.html` - HTML version of the specification review
 
 ## Directory Structure

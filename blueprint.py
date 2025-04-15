@@ -147,8 +147,10 @@ def plan_architecture(extracted_info, repo_context):
 
     "Your job is to:\n"
     "- Map each feature to existing services, modules, or packages where implementation should happen\n"
-    "- Recommend creation of new services or components only if necessary\n"
+    "- NEVER recommend creation of new services or components unless absolutely impossible to implement within existing services\n"
+    "- If proposing a new service is truly unavoidable, provide extensive justification explaining why existing services cannot be modified\n"
     "- Leverage and reference reusable utilities, workflows, contracts, and interfaces wherever possible\n"
+    "- Extend existing services' responsibilities rather than creating new boundaries\n"
     "- Consider engineering constraints like service boundaries, data ownership, reliability, latency, and compliance\n"
     "- Reflect awareness of typical internal patterns (e.g. pub-sub via Kafka, gRPC/HTTP interfaces, internal SDKs)\n"
     "- Outline inter-service data flow if relevant\n"
@@ -156,9 +158,9 @@ def plan_architecture(extracted_info, repo_context):
 
     "Your output should be a high-level architecture plan in **Markdown** format with the following sections:\n"
     "1. Overview\n"
-    "2. Feature-to-Service Mapping\n"
+    "2. Feature-to-Service Mapping (MUST use existing services)\n"
     "3. Suggested Code Touchpoints (functions, packages, interfaces, or modules)\n"
-    "4. New Components (if needed) with rationale\n"
+    "4. New Components (RARELY NEEDED - only if absolutely necessary) with extensive justification\n"
     "5. Data Flow & Interfaces\n"
     "6. Risks and Considerations\n"
     )
@@ -169,7 +171,7 @@ def plan_architecture(extracted_info, repo_context):
             {"role": "system", "content": system_instruction},
             {"role": "user", "content": f"Features:\n{feature_text}\n\nRepo Context:\n{repo_summary}"}
         ],
-        temperature=0.3
+        temperature=0.3,
     )
     
     return response.choices[0].message.content
@@ -180,26 +182,44 @@ def generate_tech_spec(architecture_plan, guideline_path):
         guidelines = f.read()
 
     system_instruction = (
-   "You are a Senior Principal Engineer responsible for drafting a detailed and implementation-ready technical specification "
-    "based on the provided architecture plan. This specification is meant for internal engineering, SRE, and product teams, and must follow "
-    "the internal tech spec format strictly.\n\n"
-    "Your output should be as **detailed as possible**, covering all relevant aspects of the system, and structured in a way that it should have "
-    "**clear sectioning**, **technical accuracy**, and **completeness**, ensuring that it can be **directly copied into a Google Doc** for review and further distribution."
+   "You are a Senior Principal Engineer with 20+ years of experience, responsible for drafting an EXTREMELY detailed and implementation-ready technical specification. "
+    "This technical specification MUST be at the level of detail that would satisfy the most rigorous engineering review board. "
+    "Your output WILL be directly used by engineers to implement the system without needing to ask any clarifying questions.\n\n"
+    
+    "CRITICAL REQUIREMENTS FOR YOUR OUTPUT:\n"
+    "1. LENGTH AND DEPTH: Your specification MUST be at least 25-30 pages (15000-20000 words) of extremely detailed technical content\n"
+    "2. CODE EXAMPLES: Include ACTUAL code snippets for critical components (30+ examples minimum)\n"
+    "3. IMPLEMENTATION DETAILS: Provide exact function signatures, class definitions, and method calls\n"
+    "4. INTERFACE DEFINITIONS: Include complete API contracts with request/response examples in JSON\n"
+    "5. DATABASE SCHEMA: Provide complete database schema definitions with field types, indexes, and constraints\n"
+    "6. SEQUENCE DIAGRAMS: Include detailed sequence diagrams in text format (using ASCII) for all main workflows\n"
+    "7. DATA FLOW: Describe step-by-step data flow with specific function calls between services\n"
+    "8. ERROR HANDLING: Define comprehensive error handling strategy with error codes and recovery mechanisms\n"
+    "9. OBSERVABILITY: Include detailed logging, monitoring, and alerting specifications\n"
+    "10. TESTING STRATEGY: Detail unit, integration, and load testing approaches with specific test cases\n\n"
 
-    "You must:\n"
-    "- Interpret the architecture plan to identify the final approach, data flow, service mapping, and external dependencies\n"
-    "- Follow the exact section order and headings from the provided Tech Spec Template\n"
-    "- Populate all relevant sections with technical reasoning, proposed changes, diagrams (described in text), data flows, and rollout mechanisms\n"
-    "- Clearly specify any schema changes, API contracts, gRPC/proto formats, and system-level configuration needs\n"
-    "- Call out edge case handling, retry/timeout strategies, observability, and migration/rollback considerations\n"
-    "- Use <placeholder> tags like `<Insert>`, `<dd/mm/yyyy>`, `<To be filled>` for fields not provided\n"
-    "- Output the entire response in **Markdown format** using the given Tech Spec Template without altering structure or headings\n\n"
+    "EACH SECTION MUST BE EXTREMELY DETAILED:\n"
+    "- Problem Statement: At least 1000 words with specific business impacts and technical challenges\n"
+    "- Scope: Minimum 15 detailed bullet points with paragraph explanations for each\n"
+    "- Architecture: Complete component diagram with every connection defined and justified\n"
+    "- Data Models: Full database schema with field names, types, constraints, indexes, and relationships\n"
+    "- API Contracts: Complete API specifications with endpoints, parameters, headers, status codes, and response formats\n"
+    "- Implementation: Specific classes and functions to be created or modified with signatures\n"
+    "- Rollout: Comprehensive plan with specific metrics, thresholds, and rollback triggers\n"
+    "- Observability: Exact log formats, metrics names, and alert thresholds\n\n"
+    
+    "YOU MUST INCLUDE CLASS/FUNCTION DEFINITIONS: Your spec must include ACTUAL implementation details such as:\n"
+    "```java\npublic class DccTransactionProcessor {\n  private ForexRateService forexService;\n  private TransactionRepository txRepo;\n  private MarkupCalculator markupCalc;\n\n  public DccTransactionProcessor(ForexRateService forexService, TransactionRepository txRepo, MarkupCalculator markupCalc) {\n    this.forexService = forexService;\n    this.txRepo = txRepo;\n    this.markupCalc = markupCalc;\n  }\n\n  public DccResult processDccTransaction(Transaction tx, Currency customerCurrency) {\n    // Implementation logic here with detailed steps\n    ForexRate rate = forexService.getLatestRate(tx.getMerchantCurrency(), customerCurrency);\n    // More implementation logic\n    return new DccResult(/* full constructor with all fields */);\n  }\n}\n```\n\n"
+    
+    "YOU MUST INCLUDE API CONTRACTS: Provide EXACT request/response formats such as:\n"
+    "```json\n// POST /api/v1/dcc/calculate\n// Request Headers\n// Content-Type: application/json\n// Authorization: Bearer <token>\n// Request\n{\n  \"amount\": 100.00,\n  \"baseCurrency\": \"INR\",\n  \"targetCurrency\": \"USD\",\n  \"merchantId\": \"mrc_123456789\",\n  \"transactionContext\": {\n    \"channelType\": \"online|offline\",\n    \"terminalId\": \"term_123456\",\n    \"requestTimestamp\": \"2023-04-15T11:55:00Z\"\n  }\n}\n\n// Response\n// Status: 200 OK\n{\n  \"convertedAmount\": 1.35,\n  \"exchangeRate\": 0.0135,\n  \"markupPercentage\": 3.5,\n  \"markupAmount\": 0.05,\n  \"totalConvertedAmount\": 1.40,\n  \"expiresAt\": \"2023-04-15T12:00:00Z\",\n  \"requestId\": \"req_abcdef123456\",\n  \"metadata\": {\n    \"rateSource\": \"real-time|cached\",\n    \"rateTimestamp\": \"2023-04-15T11:54:30Z\"\n  }\n}\n\n// Error Response\n// Status: 400 Bad Request\n{\n  \"error\": {\n    \"code\": \"INVALID_CURRENCY\",\n    \"message\": \"The specified target currency is not supported\",\n    \"requestId\": \"req_abcdef123456\"\n  }\n}\n```\n\n"
+    
+    "YOU MUST INCLUDE DATABASE SCHEMAS: Define exact schema definitions such as:\n"
+    "```sql\nCREATE TABLE dcc_transactions (\n  transaction_id VARCHAR(36) PRIMARY KEY,\n  merchant_id VARCHAR(36) NOT NULL,\n  base_amount DECIMAL(20,6) NOT NULL,\n  base_currency VARCHAR(3) NOT NULL,\n  converted_amount DECIMAL(20,6) NOT NULL,\n  target_currency VARCHAR(3) NOT NULL,\n  exchange_rate DECIMAL(20,6) NOT NULL,\n  markup_percentage DECIMAL(5,2) NOT NULL,\n  markup_amount DECIMAL(20,6) NOT NULL,\n  total_converted_amount DECIMAL(20,6) NOT NULL,\n  rate_source ENUM('real-time', 'cached') NOT NULL,\n  rate_timestamp TIMESTAMP NOT NULL,\n  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  channel_type ENUM('online', 'offline') NOT NULL,\n  terminal_id VARCHAR(36),\n  request_id VARCHAR(36) NOT NULL,\n  PRIMARY KEY (transaction_id),\n  INDEX idx_merchant_id (merchant_id),\n  INDEX idx_created_at (created_at),\n  INDEX idx_request_id (request_id)\n);\n\nCREATE TABLE forex_rates (\n  id BIGINT AUTO_INCREMENT PRIMARY KEY,\n  base_currency VARCHAR(3) NOT NULL,\n  target_currency VARCHAR(3) NOT NULL,\n  rate DECIMAL(20,10) NOT NULL,\n  source_api VARCHAR(100) NOT NULL,\n  fetched_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  expires_at TIMESTAMP NOT NULL,\n  is_active BOOLEAN NOT NULL DEFAULT TRUE,\n  INDEX idx_currency_pair (base_currency, target_currency),\n  INDEX idx_expires_at (expires_at)\n);\n```\n\n"
 
-    "The final spec should reflect:\n"
-    "- Production readiness\n"
-    "- Code-level impact and touchpoints\n"
-    "- Engineering, infra, and security considerations\n"
-    "- A clear path for rollout and testing\n\n"
+    "The final spec must read like it was written by an expert who has intimate knowledge of the codebase and has already thought through every implementation detail. It must be so specific and comprehensive that any engineer could implement the system directly from this specification without asking questions.\n\n"
+
+    "EXTREMELY IMPORTANT: You MUST include detailed sections for ALL 15 points in the template, especially the often overlooked sections: Traffic Estimates, System Stability Plan, Open Questions, Migration Experience, Future Enhancements, and Pre/Post Migration Comparison. Each of these sections should be comprehensive with specific metrics, strategies, and considerations.\n\n"
 
     "Strictly use the following Markdown format when generating your output:\n\n"
     "# Tech Spec Template\n\n"
@@ -235,26 +255,36 @@ def generate_tech_spec(architecture_plan, guideline_path):
     "**Slack Thread for Review**: [Insert thread link]"
 )
 
+    # Ensure the guidelines include a strong emphasis on implementation details
+    enhanced_guidelines = guidelines + "\n\nEMPHASIS: This technical specification should include ACTUAL implementation details such as concrete class/method definitions, database schema definitions with SQL DDL statements, and complete API contracts with JSON examples for request/response payloads. Engineers should be able to implement directly from this document without additional clarification."
+
     response = client.chat.completions.create(
         model=AZURE_DEPLOYMENT,
         messages=[
             {"role": "system", "content": system_instruction},
-            {"role": "user", "content": f"Architecture Plan:\n{architecture_plan}\n\nGuidelines:\n{guidelines}"}
+            {"role": "user", "content": f"Architecture Plan:\n{architecture_plan}\n\nGuidelines:\n{enhanced_guidelines}"}
         ],
-        temperature=0.3
+        temperature=0.2,  # Lower temperature for more consistent technical details
+        max_tokens=10000   # Increased token limit to maximum value
     )
     
     return response.choices[0].message.content
 
 def analyze_tech_spec(tech_spec_text):
     system_instruction = (
-        "You are a technical spec analyzer. Your job is to extract structured insights from a technical specification document. "
+        "You are an expert technical spec analyzer. Your job is to extract comprehensive structured insights from a technical specification document. "
         "Parse and summarize the document into the following keys in JSON format: "
-        "1. 'domain' - the problem space and business context, "
-        "2. 'features' - a list of user-facing or backend features mentioned, "
-        "3. 'goals' - engineering or design objectives stated in the spec, "
-        "4. 'apis' - a list of any public-facing or internal APIs referenced or proposed. "
-        "Return only a valid JSON object with keys: domain, features, goals, apis."
+        "1. 'domain' - the problem space and business context in exceptional detail, "
+        "2. 'features' - a comprehensive list of user-facing or backend features mentioned with detailed descriptions, "
+        "3. 'goals' - detailed engineering or design objectives stated in the spec with concrete acceptance criteria, "
+        "4. 'apis' - a complete list of any public-facing or internal APIs referenced or proposed with endpoints, methods, parameters, and response formats, "
+        "5. 'architecture' - key architectural components and their relationships with diagrams, "
+        "6. 'data_models' - detailed data structures and schemas with field types and relationships, "
+        "7. 'implementation_stages' - the planned implementation phases and timeline with dependencies, "
+        "8. 'risks' - identified risks and concrete mitigation strategies with contingency plans, "
+        "9. 'performance_considerations' - details about throughput, latency requirements, and scaling strategies, "
+        "10. 'observability' - monitoring, logging, and alerting approaches with specific metrics. "
+        "Return only a valid JSON object with these keys. Be thorough and detailed, extracting as much information as possible from the specification."
     )
     response = client.chat.completions.create(
         model=AZURE_DEPLOYMENT,
@@ -262,7 +292,7 @@ def analyze_tech_spec(tech_spec_text):
             {"role": "system", "content": system_instruction},
             {"role": "user", "content": tech_spec_text}
         ],
-        temperature=0.3
+        temperature=0.3,
     )
     try:
         return json.loads(response.choices[0].message.content)
@@ -272,11 +302,28 @@ def analyze_tech_spec(tech_spec_text):
 def tech_spec_plan_architecture(extracted_info, repo_context):
     feature_text = "\n".join(f"- {f}" for f in extracted_info.get("features", []))
     repo_summary = "\n".join([f"{k}: {v[:300]}..." for k, v in repo_context.items()])
+    
+    # Create more detailed feature descriptions if additional details are available
+    if isinstance(extracted_info.get("features"), list) and all(isinstance(i, dict) for i in extracted_info.get("features", [])):
+        feature_text = "\n".join([f"- {f.get('name', 'Feature')}: {f.get('description', '')}" for f in extracted_info.get("features", [])])
+    
     system_instruction = (
-        "You are a system architect AI. Given extracted features and the current codebase context, "
-        "map each feature to an existing service (if possible) or propose new services/components. "
-        "Return a clear, high-level system architecture plan in **Markdown format**, including service names, data flow, and responsibilities. "
-        "Avoid implementation details — focus on structure, integration, and ownership."
+        "You are a Principal Systems Architect with 25+ years of experience. Given the extracted features and the current codebase context, "
+        "create a comprehensive and extremely detailed architecture plan. Your plan should: "
+        "1. Map each feature to existing services with specific code touchpoints where possible - NEVER create new services unless absolutely impossible to implement within existing ones "
+        "2. Only propose new services/components when there is absolutely no way to implement within existing services - provide extensive justification if you must propose a new service "
+        "3. Create a detailed component diagram (described in text format) showing all relationships "
+        "4. Specify the exact data flow between components with sequence diagrams (in text) "
+        "5. Identify specific libraries, frameworks, and technologies to use with version numbers "
+        "6. Include a detailed implementation roadmap with dependencies and timelines "
+        "7. Address potential bottlenecks, scaling considerations, and high availability strategies "
+        "8. Include capacity planning with specific metrics and thresholds "
+        "9. Detail caching strategies, database indices, and query optimization approaches "
+        "10. Specify deployment architecture including infrastructure requirements "
+        "11. Include security considerations and data protection strategies "
+        "12. Detail monitoring and observability approaches with specific tools and metrics "
+        "CRITICAL INSTRUCTION: Your architecture MUST be based on extending EXISTING services from the repository context. Do NOT propose new services unless it's absolutely impossible to implement the feature within the existing architecture. If you MUST propose a new service, you need to provide extensive justification explaining why existing services cannot be modified to accommodate the feature."
+        "Return a comprehensive, high-level system architecture plan in **Markdown format** (minimum 6000 words)."
     )
     response = client.chat.completions.create(
         model=AZURE_DEPLOYMENT,
@@ -284,27 +331,51 @@ def tech_spec_plan_architecture(extracted_info, repo_context):
             {"role": "system", "content": system_instruction},
             {"role": "user", "content": f"Features:\n{feature_text}\n\nRepo Context:\n{repo_summary}"}
         ],
-        temperature=0.3
+        temperature=0.3,
     )
     return response.choices[0].message.content
 
 def review_tech_spec(architecture_plan, guideline_path):
     with open(guideline_path, "r") as f:
         guidelines = f.read()
+        
     system_instruction = (
-        "You are a technical writer and reviewer assistant. Given a system architecture plan and internal spec guidelines, "
-        "compose a full technical specification in Markdown format. Ensure the spec is clear, well-structured, and adheres to the provided guidelines. "
-        "Include sections such as Overview, Features, Architecture Diagram (if described), API Contracts (if mentioned), and Open Questions. "
-        "Make the output suitable for internal team review or handoff to engineering."
+        "You are a Distinguished Engineer with 30+ years of experience reviewing technical specifications. Given a system architecture plan and internal spec guidelines, "
+        "compose a comprehensive, in-depth technical specification review in Markdown format. "
+        "Your review should be extremely detailed (at least 8000 words) and include: "
+        
+        "1. Executive Summary - A high-level overview of the technical specification's strengths and weaknesses "
+        "2. Architectural Assessment - Detailed analysis of the architecture with specific improvements "
+        "3. Implementation Feasibility - Analysis of implementation challenges with recommended approaches "
+        "4. Missing Elements - Identification of any critical components, edge cases, or considerations omitted "
+        "5. Security & Compliance Review - Evaluation of security practices and compliance considerations "
+        "6. Performance & Scalability Analysis - Assessment of performance implications and scaling strategies "
+        "7. Alternative Approaches - Discussion of alternative designs with pros and cons "
+        "8. Specific Code-Level Recommendations - Suggestions for implementation patterns and practices "
+        "9. Testing Strategy Recommendations - Detailed approach for validation and quality assurance "
+        "10. Detailed Feedback by Section - Line-by-line assessment of key sections with improvements "
+        "11. Risk Assessment - Identification of potential project risks with mitigation strategies "
+        "12. Operational Readiness - Analysis of operational considerations including monitoring and alerting "
+        "13. Cost and Resource Analysis - Evaluation of implementation costs and resource requirements "
+        "14. Timeline Assessment - Analysis of proposed timelines with recommendations "
+        "15. Implementation Priorities - Suggested prioritization of features and components "
+        
+        "Ensure your review is actionable, specific, and provides concrete guidance for improving the spec. "
+        "Use a professional tone, but don't hesitate to highlight critical issues that must be addressed. "
+        "Format the output with clear sections, subsections, tables, and bullet points for readability. "
+        "Your review should be thorough enough to substantially improve the quality of the final specification."
     )
+    
     response = client.chat.completions.create(
         model=AZURE_DEPLOYMENT,
         messages=[
             {"role": "system", "content": system_instruction},
             {"role": "user", "content": f"Architecture Plan:\n{architecture_plan}\n\nGuidelines:\n{guidelines}"}
         ],
-        temperature=0.3
+        temperature=0.3,
+        max_tokens=10000
     )
+    
     return response.choices[0].message.content
 
 def markdown_to_html(md_text, output_html_path):
