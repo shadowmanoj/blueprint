@@ -38,6 +38,7 @@ GUIDELINE_PATH = "guidelines/spec_guidelines.md"
 OUTPUT_FOLDER = "outputs"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 TECH_SPEC_REVIEW_GUIDELINE_PATH = "guidelines/tech_spec_review_guidelines.md"
+SPEC_EXAMPLES_PATH = "spec_examples"  # Add this path for spec examples
 
 # ✅ Create shared LLM instance
 OPENAI_API_KEY = "2RUOScQCo243qls9wgMaPBjwZ5LH3GENFPKjwTOkLZDPKm5Wh0icJQQJ99BDAC77bzfXJ3w3AAABACOGjxKB"  # keep this secret
@@ -67,6 +68,47 @@ def extract_pdf_text(file_path):
         print(f"❌ Error extracting text from PDF: {e}")
         print("Please ensure the file is a valid PDF document")
         sys.exit(1)
+
+# Load spec examples (good and bad)
+def load_spec_examples(examples_path):
+    """Loads good and bad tech spec examples from PDF files using extract_pdf_text."""
+    examples = {"good": None, "bad": None}
+    # Define paths for expected PDF files
+    good_pdf_path = os.path.join(examples_path, "good_spec_example.pdf")
+    bad_pdf_path = os.path.join(examples_path, "bad_spec_example.pdf")
+
+    # Check if the examples directory exists
+    if not os.path.isdir(examples_path):
+        print(f"⚠️ Spec examples directory '{examples_path}' not found. Cannot load examples.")
+        return examples # Return defaults (None)
+
+    print(f"   Looking for spec examples in: {examples_path}")
+
+    # --- Load Good Example PDF ---
+    if os.path.exists(good_pdf_path):
+        print(f"   Attempting to load good spec example from PDF: {good_pdf_path}")
+        extracted_text = extract_pdf_text(good_pdf_path) # Reuse PDF extractor
+        if extracted_text:
+            examples["good"] = extracted_text
+            print(f"   ✅ Loaded good spec example text from PDF.")
+        else:
+            print(f"   ⚠️ Failed to extract text from good spec PDF (or PDF was empty): {good_pdf_path}")
+    else:
+        print(f"   ⚠️ Good spec example PDF file not found: {good_pdf_path}")
+
+    # --- Load Bad Example PDF ---
+    if os.path.exists(bad_pdf_path):
+        print(f"   Attempting to load bad spec example from PDF: {bad_pdf_path}")
+        extracted_text = extract_pdf_text(bad_pdf_path) # Reuse PDF extractor
+        if extracted_text:
+            examples["bad"] = extracted_text
+            print(f"   ✅ Loaded bad spec example text from PDF.")
+        else:
+            print(f"   ⚠️ Failed to extract text from bad spec PDF (or PDF was empty): {bad_pdf_path}")
+    else:
+        print(f"   ⚠️ Bad spec example PDF file not found: {bad_pdf_path}")
+
+    return examples
 
 # Step 2: Analyze PRD → Structured Info
 def analyze_prd(prd_text):
@@ -177,9 +219,17 @@ def plan_architecture(extracted_info, repo_context):
     return response.choices[0].message.content
 
 # Step 5: Generate tech spec
-def generate_tech_spec(architecture_plan, guideline_path):
+def generate_tech_spec(architecture_plan, guideline_path, good_example_text=None, bad_example_text=None):
     with open(guideline_path, "r") as f:
         guidelines = f.read()
+
+    # Add examples to the prompt if available
+    example_prompt = ""
+    if good_example_text:
+        example_prompt += f"\n\n**GOOD SPEC EXAMPLE (Reference for Quality):**\nHere is a snippet of a good quality specification to emulate:\n```\n{good_example_text[:2000] if len(good_example_text) > 2000 else good_example_text}\n```"
+    
+    if bad_example_text:
+        example_prompt += f"\n\n**BAD SPEC EXAMPLE (Patterns to Avoid):**\nHere is a snippet of issues to avoid in your specification:\n```\n{bad_example_text[:2000] if len(bad_example_text) > 2000 else bad_example_text}\n```"
 
     system_instruction = (
    "You are a Senior Principal Engineer with 20+ years of experience, responsible for drafting an EXTREMELY detailed and implementation-ready technical specification. "
@@ -256,7 +306,7 @@ def generate_tech_spec(architecture_plan, guideline_path):
 )
 
     # Ensure the guidelines include a strong emphasis on implementation details
-    enhanced_guidelines = guidelines + "\n\nEMPHASIS: This technical specification should include ACTUAL implementation details such as concrete class/method definitions, database schema definitions with SQL DDL statements, and complete API contracts with JSON examples for request/response payloads. Engineers should be able to implement directly from this document without additional clarification."
+    enhanced_guidelines = guidelines + "\n\nEMPHASIS: This technical specification should include ACTUAL implementation details such as concrete class/method definitions, database schema definitions with SQL DDL statements, and complete API contracts with JSON examples for request/response payloads. Engineers should be able to implement directly from this document without additional clarification." + example_prompt
 
     response = client.chat.completions.create(
         model=AZURE_DEPLOYMENT,
@@ -335,7 +385,7 @@ def tech_spec_plan_architecture(extracted_info, repo_context):
     )
     return response.choices[0].message.content
 
-def review_tech_spec(architecture_plan, guideline_path):
+def review_tech_spec(architecture_plan, guideline_path, good_example_text=None, bad_example_text=None):
     with open(guideline_path, "r") as f:
         guidelines = f.read()
         
@@ -366,11 +416,19 @@ def review_tech_spec(architecture_plan, guideline_path):
         "Your review should be thorough enough to substantially improve the quality of the final specification."
     )
     
+    # Add examples to the prompt if available
+    example_prompt = ""
+    if good_example_text:
+        example_prompt += f"\n\n**GOOD SPEC EXAMPLE (Reference for Quality):**\nHere is a snippet of a good quality specification to emulate:\n```\n{good_example_text[:2000] if len(good_example_text) > 2000 else good_example_text}\n```"
+    
+    if bad_example_text:
+        example_prompt += f"\n\n**BAD SPEC EXAMPLE (Patterns to Avoid):**\nHere is a snippet of issues to avoid in your specification:\n```\n{bad_example_text[:2000] if len(bad_example_text) > 2000 else bad_example_text}\n```"
+
     response = client.chat.completions.create(
         model=AZURE_DEPLOYMENT,
         messages=[
             {"role": "system", "content": system_instruction},
-            {"role": "user", "content": f"Architecture Plan:\n{architecture_plan}\n\nGuidelines:\n{guidelines}"}
+            {"role": "user", "content": f"Architecture Plan:\n{architecture_plan}\n\nGuidelines:\n{guidelines}\n\n{example_prompt}"}
         ],
         temperature=0.3,
         max_tokens=10000
@@ -513,13 +571,21 @@ def generate_workflow(input_path=INPUT_PATH, repo_path=REPO_PATH, guideline_path
     print("📚 Step 3: Loading repo context...")
     repo_context = load_repo_context(repo_path)
 
+    print("📚 Step 3.5: Loading specification examples...")
+    spec_examples = load_spec_examples(SPEC_EXAMPLES_PATH)
+
     print("🧱 Step 4: Planning architecture...")
     plan = plan_architecture(structured, repo_context)
     with open(os.path.join(OUTPUT_FOLDER, "architecture_plan.md"), "w") as f:
         f.write(plan)
 
     print("📝 Step 5: Generating tech spec...")
-    spec = generate_tech_spec(plan, guideline_path)
+    spec = generate_tech_spec(
+        plan, 
+        guideline_path,
+        good_example_text=spec_examples.get("good"),
+        bad_example_text=spec_examples.get("bad")
+    )
 
     # Generate outputs
     final_md_path = os.path.join(OUTPUT_FOLDER, "final_spec.md")
@@ -564,6 +630,9 @@ def review_workflow(spec_path=None):
         with open(spec_path, "r", encoding="utf-8") as f:
             spec = f.read()
     
+    print("📚 Step 5.5: Loading specification examples...")
+    spec_examples = load_spec_examples(SPEC_EXAMPLES_PATH)
+    
     print("🧠 Step 6: Analyzing Tech Spec...")
     tech_spec_review_structured = analyze_tech_spec(spec)
     review_output_json = os.path.join(OUTPUT_FOLDER, "tech_spec_review_structured.json")
@@ -578,7 +647,12 @@ def review_workflow(spec_path=None):
         f.write(tech_spec_review_plan)
     
     print("📝 Step 8: Generating tech spec review...")
-    spec_review = review_tech_spec(tech_spec_review_plan, TECH_SPEC_REVIEW_GUIDELINE_PATH)
+    spec_review = review_tech_spec(
+        tech_spec_review_plan, 
+        TECH_SPEC_REVIEW_GUIDELINE_PATH,
+        good_example_text=spec_examples.get("good"),
+        bad_example_text=spec_examples.get("bad")
+    )
     
     # Save the review output
     review_md_path = os.path.join(OUTPUT_FOLDER, "review_spec.md")
