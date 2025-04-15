@@ -43,7 +43,7 @@ SPEC_EXAMPLES_PATH = "spec_examples"  # Add this path for spec examples
 # ✅ Create shared LLM instance
 OPENAI_API_KEY = "2RUOScQCo243qls9wgMaPBjwZ5LH3GENFPKjwTOkLZDPKm5Wh0icJQQJ99BDAC77bzfXJ3w3AAABACOGjxKB"  # keep this secret
 AZURE_ENDPOINT = "https://fy26-hackon-q1.openai.azure.com"
-AZURE_DEPLOYMENT = "Blueprint"
+AZURE_DEPLOYMENT = "blueprint-gpt4"
 API_VERSION = "2025-01-01-preview"
 
 client = AzureOpenAI(
@@ -315,7 +315,7 @@ def generate_tech_spec(architecture_plan, guideline_path, good_example_text=None
             {"role": "user", "content": f"Architecture Plan:\n{architecture_plan}\n\nGuidelines:\n{enhanced_guidelines}"}
         ],
         temperature=0.2,  # Lower temperature for more consistent technical details
-        max_tokens=10000   # Increased token limit to maximum value
+        max_tokens=4096     # Increased token limit to maximum value
     )
     
     return response.choices[0].message.content
