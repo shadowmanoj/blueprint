@@ -1,83 +1,98 @@
-# Blueprint: Technical Documentation Generator
+# Blueprint
 
-Blueprint is an AI-powered tool that automatically generates technical specifications and documentation from product requirements. It analyzes input documents, extracts key information, and creates structured technical specifications in Markdown format.
+Blueprint is an AI-powered technical specification generator that automatically transforms Product Requirements Documents (PRDs) into detailed technical specifications.
 
 ## Features
 
-- **Document Analysis**: Extracts structured information from PRD (Product Requirements Document) files
-- **Architecture Planning**: Generates a high-level architecture design based on extracted requirements
-- **Technical Specification Generation**: Creates comprehensive technical specifications in both Markdown and HTML formats
-- **Repository Context Integration**: Incorporates existing codebase information to create relevant and aligned specifications
+- PDF text extraction
+- AI-powered PRD analysis
+- Architecture planning
+- Technical specification generation
+- Technical specification review
+
+## Requirements
+
+- Python 3.6+
+- Required packages (automatically installed):
+  - PyMuPDF (fitz)
+  - markdown
 
 ## Installation
 
-1. Clone this repository:
-   ```
-   git clone <repository-url>
-   cd blueprint
-   ```
+No installation required beyond cloning the repository:
 
-2. Create and activate a virtual environment (recommended):
-   ```
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
+```bash
+git clone <repository-url>
+cd blueprint
+```
 
 ## Usage
 
-1. Place your Product Requirements Document (PDF) in the `input_docs/` directory.
-2. Place your repository documentation in the `repo/` directory.
-3. Create your specification guidelines in `guidelines/spec_guidelines.md`.
-4. Run the main script:
-   ```
-   python __main__.py
-   ```
-5. The generated outputs will be available in the `outputs/` directory:
-   - `structured_output.json`: Extracted information from the PRD
-   - `architecture_plan.md`: High-level architecture plan
-   - `final_spec.md`: Complete technical specification in Markdown format
-   - `final_spec.html`: Technical specification in HTML format (for better rendering)
+Blueprint provides two main workflows: Generate and Review.
 
-## Configuration
+### Generate Workflow
 
-Edit the following variables in `__main__.py` to customize the tool:
+This workflow extracts text from a PRD, analyzes it, loads repository context, plans architecture, and generates a technical specification.
 
-```python
-# CONFIG
-INPUT_PATH = "input_docs/dcc_prd.pdf"  # Path to your input PRD
-REPO_PATH = "repo"                    # Path to your repo documentation
-GUIDELINE_PATH = "guidelines/spec_guidelines.md"  # Path to spec guidelines
-OUTPUT_FOLDER = "outputs"             # Directory for output files
+```bash
+# Generate a specification using default paths
+python blueprint.py generate
+
+# Generate with a custom PRD file
+python blueprint.py generate --input path/to/your/prd.pdf
+
+# Generate with custom repository context
+python blueprint.py generate --repo path/to/your/repo
+
+# Generate with custom guidelines
+python blueprint.py generate --input path/to/prd.pdf --guidelines path/to/guidelines.md
+
+# Show help for generate command
+python blueprint.py generate --help
 ```
 
-## Dependencies
+### Review Workflow
 
-- openai: For AI-powered text generation
-- langchain: For document processing
-- pymupdf: For PDF text extraction
-- python-dotenv: For environment variable management
-- markdown: For converting Markdown to HTML
+This workflow analyzes an existing technical specification, extracts structured information, and generates an enhanced review.
 
-## Troubleshooting
+```bash
+# Review the most recently generated specification
+python blueprint.py review
 
-### Unicode Errors
-If you encounter Unicode errors when processing documents, ensure your input files are UTF-8 encoded.
+# Review a specific specification file
+python blueprint.py review --spec path/to/your/spec.md
 
-### Missing Dependencies
-Run `python check_imports.py` to verify all dependencies are correctly installed.
+# Show help for review command
+python blueprint.py review --help
+```
 
-### Browser Not Opening
-If the browser doesn't open automatically, manually navigate to the output files in the `outputs/` directory.
+### General Help
+
+```bash
+# Show general help information
+python blueprint.py --help
+```
+
+## Output Files
+
+All output files are saved to the `outputs` directory:
+
+- `structured_output.json` - Structured information extracted from the PRD
+- `architecture_plan.md` - High-level architecture plan
+- `final_spec.md` - Generated technical specification
+- `final_spec.html` - HTML version of the technical specification
+- `tech_spec_review_structured.json` - Structured information from review
+- `tech_spec_review_architecture_plan.md` - Review architecture plan
+- `review_spec.md` - Generated specification review
+- `review_spec.html` - HTML version of the specification review
+
+## Directory Structure
+
+- `input_docs/` - Contains input PRD files (default: `dcc_prd.pdf`)
+- `repo/` - Contains repository context for architecture planning
+- `guidelines/` - Contains specification guidelines
+- `outputs/` - Contains all generated files
 
 ## License
 
-[Your License Information]
-
-## Contributing
-
-[Your Contributing Guidelines] 
+[Specify license information here] 
