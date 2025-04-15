@@ -430,8 +430,8 @@ def review_tech_spec(architecture_plan, guideline_path, good_example_text=None, 
             {"role": "system", "content": system_instruction},
             {"role": "user", "content": f"Architecture Plan:\n{architecture_plan}\n\nGuidelines:\n{guidelines}\n\n{example_prompt}"}
         ],
-        temperature=0.3,
-        max_tokens=10000
+        temperature=0.2,
+        max_tokens=4096
     )
     
     return response.choices[0].message.content
