@@ -7,18 +7,16 @@ import subprocess
 
 def check_install_dependencies():
     """Check and install required dependencies"""
-    print("🔍 Checking and installing required dependencies...")
+    print("🔍 Checking dependencies...")
     required_packages = ["pymupdf", "markdown"]
     
     for package in required_packages:
         try:
             __import__(package.replace("-", "_"))
-            print(f"✅ {package} is already installed")
         except ImportError:
             print(f"📦 Installing {package}...")
             try:
                 subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-                print(f"✅ {package} installed successfully")
             except subprocess.CalledProcessError:
                 print(f"❌ Failed to install {package}. Please install it manually: pip install {package}")
                 sys.exit(1)
@@ -79,34 +77,28 @@ def load_spec_examples(examples_path):
 
     # Check if the examples directory exists
     if not os.path.isdir(examples_path):
-        print(f"⚠️ Spec examples directory '{examples_path}' not found. Cannot load examples.")
+        print(f"⚠️ Spec examples directory '{examples_path}' not found.")
         return examples # Return defaults (None)
-
-    print(f"   Looking for spec examples in: {examples_path}")
 
     # --- Load Good Example PDF ---
     if os.path.exists(good_pdf_path):
-        print(f"   Attempting to load good spec example from PDF: {good_pdf_path}")
         extracted_text = extract_pdf_text(good_pdf_path) # Reuse PDF extractor
         if extracted_text:
             examples["good"] = extracted_text
-            print(f"   ✅ Loaded good spec example text from PDF.")
         else:
-            print(f"   ⚠️ Failed to extract text from good spec PDF (or PDF was empty): {good_pdf_path}")
+            print(f"⚠️ Failed to extract text from good spec PDF: {good_pdf_path}")
     else:
-        print(f"   ⚠️ Good spec example PDF file not found: {good_pdf_path}")
+        print(f"⚠️ Good spec example PDF file not found: {good_pdf_path}")
 
     # --- Load Bad Example PDF ---
     if os.path.exists(bad_pdf_path):
-        print(f"   Attempting to load bad spec example from PDF: {bad_pdf_path}")
         extracted_text = extract_pdf_text(bad_pdf_path) # Reuse PDF extractor
         if extracted_text:
             examples["bad"] = extracted_text
-            print(f"   ✅ Loaded bad spec example text from PDF.")
         else:
-            print(f"   ⚠️ Failed to extract text from bad spec PDF (or PDF was empty): {bad_pdf_path}")
+            print(f"⚠️ Failed to extract text from bad spec PDF: {bad_pdf_path}")
     else:
-        print(f"   ⚠️ Bad spec example PDF file not found: {bad_pdf_path}")
+        print(f"⚠️ Bad spec example PDF file not found: {bad_pdf_path}")
 
     return examples
 
@@ -437,6 +429,7 @@ def review_tech_spec(architecture_plan, guideline_path, good_example_text=None, 
     return response.choices[0].message.content
 
 def markdown_to_html(md_text, output_html_path):
+    """Converts Markdown text to a styled HTML file."""
     try:
         # Try using the Python markdown module
         try:
@@ -525,8 +518,6 @@ def markdown_to_html(md_text, output_html_path):
         # Save the HTML file
         with open(output_html_path, 'w', encoding='utf-8') as f:
             f.write(styled_html)
-            
-        print(f"✅ HTML file created at: {output_html_path}")
         return True
         
     except Exception as e:
@@ -537,10 +528,9 @@ def open_output_file(file_path):
     """Helper function to open the output file in browser"""
     try:
         webbrowser.open(f"file://{os.path.abspath(file_path)}")
-        print(f"🎉 Pipeline complete! Check your browser to view the output.")
+        print(f"🎉 Complete! Output available in browser.")
     except Exception as e:
-        print(f"Could not open browser: {e}")
-        print(f"🎉 Pipeline complete! Your file is available at: {file_path}")
+        print(f"Could not open browser. Output available at: {file_path}")
 
 def generate_workflow(input_path=INPUT_PATH, repo_path=REPO_PATH, guideline_path=GUIDELINE_PATH):
     """Execute the generation workflow (Steps 1-5)"""
@@ -560,7 +550,7 @@ def generate_workflow(input_path=INPUT_PATH, repo_path=REPO_PATH, guideline_path
         print("Please provide a valid path to the specification guidelines")
         sys.exit(1)
         
-    print(f"🔍 Step 1: Extracting PRD from '{input_path}'...")
+    print(f"🔍 Step 1: Extracting PRD...")
     prd_text = extract_pdf_text(input_path)
     
     print("🧠 Step 2: Analyzing PRD...")
@@ -568,10 +558,8 @@ def generate_workflow(input_path=INPUT_PATH, repo_path=REPO_PATH, guideline_path
     with open(os.path.join(OUTPUT_FOLDER, "structured_output.json"), "w") as f:
         json.dump(structured, f, indent=2)
 
-    print("📚 Step 3: Loading repo context...")
+    print("📚 Step 3: Loading repo context and examples...")
     repo_context = load_repo_context(repo_path)
-
-    print("📚 Step 3.5: Loading specification examples...")
     spec_examples = load_spec_examples(SPEC_EXAMPLES_PATH)
 
     print("🧱 Step 4: Planning architecture...")
@@ -594,7 +582,7 @@ def generate_workflow(input_path=INPUT_PATH, repo_path=REPO_PATH, guideline_path
     # Save the markdown
     with open(final_md_path, "w", encoding="utf-8") as f:
         f.write(spec)
-    print(f"✅ Markdown spec saved at: {final_md_path}")
+    print(f"✅ Output saved at: {final_md_path}")
 
     # Convert to HTML
     success = markdown_to_html(spec, final_html_path)
@@ -630,10 +618,10 @@ def review_workflow(spec_path=None):
         with open(spec_path, "r", encoding="utf-8") as f:
             spec = f.read()
     
-    print("📚 Step 5.5: Loading specification examples...")
+    print("📚 Loading spec examples and analyzing...")
     spec_examples = load_spec_examples(SPEC_EXAMPLES_PATH)
     
-    print("🧠 Step 6: Analyzing Tech Spec...")
+    print("🧠 Step 6: Analyzing tech spec...")
     tech_spec_review_structured = analyze_tech_spec(spec)
     review_output_json = os.path.join(OUTPUT_FOLDER, "tech_spec_review_structured.json")
     with open(review_output_json, "w") as f:
@@ -660,7 +648,7 @@ def review_workflow(spec_path=None):
     
     with open(review_md_path, "w", encoding="utf-8") as f:
         f.write(spec_review)
-    print(f"✅ Review markdown saved at: {review_md_path}")
+    print(f"✅ Review saved at: {review_md_path}")
     
     # Convert to HTML
     success = markdown_to_html(spec_review, review_html_path)
