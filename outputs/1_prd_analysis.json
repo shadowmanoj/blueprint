@@ -1,0 +1,81 @@
+{
+  "domain": "Payments",
+  "features": [
+    "Dynamic Currency Conversion (DCC) integration into OmniChannel Stack",
+    "Support for aggregator merchants via Hitachi-RBL BIN Sponsorship Model",
+    "Unified DCC solution for online and offline payments",
+    "Real-time currency conversion with transparent exchange rates",
+    "Customer opt-in/out for DCC at POS terminals and online checkouts",
+    "Revenue sharing for merchants on DCC markup fees",
+    "Unified dashboard for transaction management and reconciliation"
+  ],
+  "goals": [
+    "Scalability of DCC across online and offline channels",
+    "Reduction of operational overhead by unifying tech stacks",
+    "Improved merchant adoption and retention",
+    "Increased revenue share from DCC markup fees",
+    "Enhanced customer experience with transparent pricing",
+    "Compliance with international payment standards"
+  ],
+  "apis": [
+    "Internal API for Razorpay POS to detect international card transactions",
+    "External API for real-time exchange rate retrieval",
+    "Internal API for transaction reconciliation across OmniChannel Stack",
+    "Customer-facing API for DCC opt-in/out at checkout"
+  ],
+  "recommended_tech_stack": [
+    "Java/Kotlin for POS integration",
+    "Node.js or Go for backend services",
+    "Postgres for transactional data storage",
+    "Redis for caching real-time exchange rates",
+    "Kafka for event-driven architecture",
+    "gRPC for inter-service communication",
+    "Hitachi-RBL switch integration for BIN sponsorship"
+  ],
+  "service_mapping": {
+    "DCC Detection and Opt-In": "POS Service",
+    "Exchange Rate Retrieval": "Currency Conversion Service",
+    "Transaction Reconciliation": "Payment Reconciliation Service",
+    "Dashboard Management": "Merchant Dashboard Service"
+  },
+  "data_models": [
+    {
+      "entity": "Transaction",
+      "fields": [
+        "transaction_id",
+        "merchant_id",
+        "customer_id",
+        "amount_in_inr",
+        "amount_in_home_currency",
+        "exchange_rate",
+        "dcc_opt_in"
+      ]
+    },
+    {
+      "entity": "Merchant",
+      "fields": [
+        "merchant_id",
+        "name",
+        "channel_type",
+        "dcc_enabled",
+        "revenue_share"
+      ]
+    },
+    {
+      "entity": "ExchangeRate",
+      "fields": [
+        "currency_pair",
+        "rate",
+        "timestamp"
+      ]
+    }
+  ],
+  "edge_cases": [
+    "Customer disputes due to incorrect exchange rates",
+    "Failure in real-time exchange rate retrieval leading to fallback mechanisms",
+    "Handling refunds and reversals for DCC transactions",
+    "Security concerns with exposing exchange rates and transaction details",
+    "Compliance with international payment regulations for currency conversion",
+    "Operational challenges in scaling DCC across multiple acquiring banks"
+  ]
+}

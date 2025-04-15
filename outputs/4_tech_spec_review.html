@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4 Tech Spec Review</title>
+    
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; padding: 25px; max-width: 960px; margin: 20px auto; color: #333; background-color: #fdfdfd; }
+        h1, h2, h3, h4, h5, h6 { color: #0056b3; margin-top: 1.8em; margin-bottom: 0.8em; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        h1 { font-size: 2.2em; }
+        h2 { font-size: 1.8em; }
+        h3 { font-size: 1.4em; border-bottom: none; }
+        h4 { font-size: 1.1em; color: #333; border-bottom: none; }
+        pre { background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 15px; overflow: auto; font-family: Consolas, 'Courier New', monospace; font-size: 0.9em; }
+        code:not(pre > code) { background-color: #eee; padding: 0.2em 0.4em; border-radius: 3px; font-family: Consolas, 'Courier New', monospace; font-size: 0.9em;}
+        pre > code { background-color: transparent; padding: 0; font-size: 1em; border: none; } /* Reset style for code inside pre */
+        table { border-collapse: collapse; width: 100%; margin-bottom: 1.5em; border: 1px solid #ccc; }
+        th, td { border: 1px solid #ccc; padding: 10px 12px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        ul, ol { margin-bottom: 1em; padding-left: 2em; }
+        li { margin-bottom: 0.6em; }
+        blockquote { border-left: 5px solid #ccc; padding: 10px 20px; margin: 1.5em 0; color: #555; background-color: #f9f9f9; }
+        a { color: #0066cc; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        hr { border: none; border-top: 1px solid #eee; margin: 2em 0; }
+        /* Basic styles for codehilite if markdown library uses it */
+        .codehilite pre { margin: 0; }
+        .codehilite .hll { background-color: #ffffcc }
+        /* Add more specific codehilite theme styles here if needed */
+    </style>
+    
+</head>
+<body>
+    <h1>4 Tech Spec Review</h1>
+    <h2 id="tech-spec-review-feedback">Tech Spec Review &amp; Feedback</h2>
+<p><strong>Overall Assessment:</strong><br />
+The draft for the Dynamic Currency Conversion (DCC) integration is well-structured and covers most of the critical aspects of the feature. However, it lacks clarity in certain areas, such as the problem statement, detailed architecture, and testing/monitoring plans. While it aligns with the <strong>Good Example</strong> in terms of structure and scope, it falls short in terms of depth and specificity in certain sections. Improvements are needed to ensure clarity, feasibility, and readiness for engineering handoff.</p>
+<hr />
+<h3 id="strengths"><strong>Strengths:</strong></h3>
+<ul>
+<li><strong>Clear Objectives:</strong> The introduction section clearly outlines the goals of the DCC integration, including scalability, regulatory compliance, and customer experience improvements.</li>
+<li><strong>Well-Defined Components:</strong> The draft identifies both existing and new components, along with their responsibilities, which is crucial for understanding the integration points.</li>
+<li><strong>API Documentation:</strong> API endpoints are described with request/response examples and error handling, which is a good practice for clarity.</li>
+<li><strong>Non-Functional Requirements (NFRs):</strong> Performance, scalability, reliability, and security requirements are explicitly mentioned, ensuring a robust design.</li>
+<li><strong>Rollout and Rollback Plans:</strong> The implementation plan includes phased rollout and rollback strategies, which are essential for minimizing risks.</li>
+</ul>
+<hr />
+<h3 id="areas-for-improvement-weaknesses"><strong>Areas for Improvement / Weaknesses:</strong></h3>
+<h4 id="1-problem-statement"><strong>1. Problem Statement</strong></h4>
+<ul>
+<li><strong>Issue:</strong> The problem statement is missing a clear articulation of the business context and pain points. It does not explain why DCC is necessary or what specific problems it solves for merchants or customers.</li>
+<li><em>Suggestion:</em> Clearly define the current limitations (e.g., lack of currency conversion, customer dissatisfaction, loss of revenue opportunities) and how DCC addresses these issues. Refer to the <strong>Good Example</strong>, which provides a detailed problem statement with business impact.</li>
+</ul>
+<hr />
+<h4 id="2-architecture-high-level-design"><strong>2. Architecture &amp; High-Level Design</strong></h4>
+<ul>
+<li><strong>Issue 1:</strong> The "High-Level Architecture Diagram" is missing, and there is no visual representation of the system's components or data flows.</li>
+<li>
+<p><em>Suggestion:</em> Add a high-level architecture diagram showing the interaction between services (e.g., <code>DCC Service</code>, <code>Payment Gateway</code>, <code>BIN Sponsorship Service</code>) and external dependencies (e.g., exchange rate providers, Hitachi-RBL APIs). This will help visualize the integration points and data flow.</p>
+</li>
+<li>
+<p><strong>Issue 2:</strong> The responsibilities of existing components are listed but not explained in detail. For example, how does the <code>POS Service</code> handle opt-in/out workflows, or how does the <code>Reporting &amp; Reconciliation Service</code> aggregate data?</p>
+</li>
+<li>
+<p><em>Suggestion:</em> Provide more detail on the responsibilities of existing components, especially where they interact with the new DCC services.</p>
+</li>
+<li>
+<p><strong>Issue 3:</strong> No fallback or failure recovery strategies are mentioned for critical components like the <code>DCC Service</code> or <code>BIN Sponsorship Service</code>.</p>
+</li>
+<li><em>Suggestion:</em> Include fallback mechanisms (e.g., retries, circuit breakers) for external dependencies like exchange rate providers. Define how the system will handle failures gracefully.</li>
+</ul>
+<hr />
+<h4 id="3-scope-and-assumptions"><strong>3. Scope and Assumptions</strong></h4>
+<ul>
+<li><strong>Issue:</strong> There is no dedicated section for scope, out-of-scope items, or assumptions. This makes it unclear what is explicitly included or excluded in the project.</li>
+<li><em>Suggestion:</em> Add a "Scope and Assumptions" section. Clearly define what is in scope (e.g., online and offline DCC, revenue sharing) and out of scope (e.g., non-card payment methods). List assumptions, such as SLAs for exchange rate providers or merchant opt-in requirements.</li>
+</ul>
+<hr />
+<h4 id="4-api-contracts-data-models"><strong>4. API Contracts &amp; Data Models</strong></h4>
+<ul>
+<li><strong>Issue 1:</strong> While API examples are provided, there is no mention of payload validation, schema constraints, or data model changes.</li>
+<li>
+<p><em>Suggestion:</em> Define the data model changes explicitly. For example, include schema updates for transaction metadata (e.g., <code>dcc_opt_in</code>, <code>dcc_rate</code>, <code>dcc_markup</code>). Mention constraints like data types, default values, and validation rules.</p>
+</li>
+<li>
+<p><strong>Issue 2:</strong> Kafka payloads for event-driven architecture (e.g., DCC transaction events) are not described in detail.</p>
+</li>
+<li><em>Suggestion:</em> Provide sample Kafka payloads and explain the event schema, including required fields and optional fields.</li>
+</ul>
+<hr />
+<h4 id="5-testing-monitoring"><strong>5. Testing &amp; Monitoring</strong></h4>
+<ul>
+<li><strong>Issue:</strong> The draft does not include a detailed testing or monitoring plan. There is no mention of unit testing, integration testing, load testing, or observability requirements.</li>
+<li><em>Suggestion:</em> Add a section on testing and monitoring. Include:<ul>
+<li>Unit, integration, and regression testing plans.</li>
+<li>Load testing to validate scalability (e.g., 1,000 TPS).</li>
+<li>Observability requirements, such as metrics, logs, and alerts for critical services like <code>DCC Service</code>.</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h4 id="6-compliance-and-regulatory-requirements"><strong>6. Compliance and Regulatory Requirements</strong></h4>
+<ul>
+<li><strong>Issue:</strong> While regulatory compliance is mentioned, there are no details on how compliance will be ensured or audited.</li>
+<li><em>Suggestion:</em> Elaborate on compliance requirements for BIN sponsorship and forex regulations. Include plans for audit logging and periodic reviews.</li>
+</ul>
+<hr />
+<h4 id="7-open-questions-and-risks"><strong>7. Open Questions and Risks</strong></h4>
+<ul>
+<li><strong>Issue:</strong> The draft does not list open questions, risks, or known limitations, which are critical for project planning.</li>
+<li><em>Suggestion:</em> Add a section for open questions (e.g., "What is the SLA for exchange rate providers?") and risks (e.g., "Dependency on external APIs for real-time rates"). Include mitigation strategies for identified risks.</li>
+</ul>
+<hr />
+<h4 id="8-clarity-and-formatting"><strong>8. Clarity and Formatting</strong></h4>
+<ul>
+<li><strong>Issue:</strong> Some sections, like "Unified Dashboard" and "Aggregator Merchant Support," are underexplained. The placeholders (e.g., <code>&lt;To be defined&gt;</code>) in the document information section reduce the document's readiness.</li>
+<li><em>Suggestion:</em> Replace placeholders with actual information. Ensure all sections are fully fleshed out and consistent in detail.</li>
+</ul>
+<hr />
+<h3 id="general-feedback"><strong>General Feedback:</strong></h3>
+<ul>
+<li>The draft is a good starting point but needs more depth and specificity to ensure engineering readiness.</li>
+<li>Missing diagrams (e.g., architecture, data flow) make it harder to understand the system at a glance.</li>
+<li>The document should follow a consistent format and include a table of contents for easier navigation.</li>
+</ul>
+<hr />
+<h3 id="comparison-with-examples"><strong>Comparison with Examples:</strong></h3>
+<ul>
+<li><strong>Good Example:</strong> The good example provides a detailed problem statement, clear scope, and comprehensive architecture diagrams. It also includes detailed testing, monitoring, and rollout plans. The draft aligns with the good example in structure but lacks the same level of detail and clarity.</li>
+<li><strong>Bad Example:</strong> The draft avoids some pitfalls of the bad example, such as incomplete sections and vague descriptions. However, it shares some issues, like missing diagrams and insufficient detail in key areas.</li>
+</ul>
+<hr />
+<h3 id="recommendations-next-steps"><strong>Recommendations / Next Steps:</strong></h3>
+<ol>
+<li><strong>Add Missing Diagrams:</strong> Include a high-level architecture diagram and data flow diagrams for online and POS flows.</li>
+<li><strong>Refine Problem Statement:</strong> Clearly articulate the business problem and how DCC addresses it.</li>
+<li><strong>Define Scope and Assumptions:</strong> Add a dedicated section for scope, out-of-scope items, and assumptions.</li>
+<li><strong>Detail APIs and Data Models:</strong> Specify API contracts, Kafka payloads, and schema changes with examples and constraints.</li>
+<li><strong>Plan Testing and Monitoring:</strong> Include a detailed testing strategy and observability requirements.</li>
+<li><strong>Address Compliance:</strong> Elaborate on how regulatory compliance will be ensured and audited.</li>
+<li><strong>List Open Questions and Risks:</strong> Identify gaps, risks, and mitigation strategies.</li>
+<li><strong>Polish Formatting:</strong> Replace placeholders, add a table of contents, and ensure consistent formatting.</li>
+</ol>
+<p>By addressing these gaps, the document will be more comprehensive, clear, and ready for engineering handoff.</p>
+</body>
+</html>

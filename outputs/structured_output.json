@@ -1,4 +1,104 @@
 {
-  "error": "Invalid JSON",
-  "raw": "```json\n{\n  \"domain\": \"Payments and FinTech\",\n  \"features\": [\n    \"Dynamic Currency Conversion (DCC) integration into Razorpay OmniChannel Stack.\",\n    \"Support for both online and offline merchants.\",\n    \"Real-time currency conversion with transparent exchange rates.\",\n    \"Customer opt-in/out for DCC at POS terminals or online checkout.\",\n    \"Unified dashboard for merchants to manage transactions across channels.\",\n    \"Revenue-sharing opportunities for merchants through DCC markup fees.\",\n    \"Support for aggregator merchants via Hitachi-RBL BIN Sponsorship Model.\",\n    \"Integration with Razorpay\u2019s Cross-Border Payments Suite.\",\n    \"Elimination of reliance on third-party DCC providers like Planet Payments and Worldline.\"\n  ],\n  \"goals\": [\n    \"Provide a unified DCC solution for OmniChannel merchants.\",\n    \"Increase merchant adoption and retention by offering seamless DCC functionality.\",\n    \"Capture a larger share of DCC markup revenue by eliminating third-party providers.\",\n    \"Reduce operational overhead and technical debt by consolidating DCC into a single stack.\",\n    \"Expand DCC support across more acquiring banks.\",\n    \"Enhance international customer experience with transparent pricing and seamless checkout.\"\n  ],\n  \"apis\": [\n    {\n      \"name\": \"DCC API\",\n      \"description\": \"Facilitates real-time currency conversion and opt-in/out functionality for international transactions.\",\n      \"status\": \"To be added\"\n    },\n    {\n      \"name\": \"Merchant Dashboard API\",\n      \"description\": \"Provides merchants with a unified interface to manage DCC transactions across online and offline channels.\",\n      \"status\": \"To be added\"\n    },\n    {\n      \"name\": \"Cross-Border Payments API\",\n      \"description\": \"Integrates DCC functionality with Razorpay\u2019s existing cross-border payment solutions.\",\n      \"status\": \"To be added\"\n    }\n  ]\n}\n```"
+  "domain": "Payments",
+  "features": [
+    "Dynamic Currency Conversion (DCC) integration into Razorpay OmniChannel Stack",
+    "Support for both online and offline merchants",
+    "Real-time currency conversion with transparent exchange rates",
+    "Revenue sharing for merchants through DCC markup",
+    "Unified dashboard for transaction reconciliation across channels",
+    "Support for aggregator merchants via Hitachi-RBL BIN Sponsorship Model",
+    "Customer opt-in/out for DCC at POS terminals and online checkout",
+    "Integration with Razorpay Cross-Border Payments Suite"
+  ],
+  "goals": [
+    "Provide a unified DCC solution across online and offline payment channels",
+    "Reduce reliance on third-party DCC providers to capture larger revenue share",
+    "Enhance merchant adoption and retention through seamless integration",
+    "Improve operational efficiency by reducing tech stack fragmentation",
+    "Ensure compliance with international payment standards",
+    "Deliver transparent and frictionless payment experiences for international customers"
+  ],
+  "apis": [
+    "POS API for detecting international card transactions and enabling DCC opt-in/out",
+    "Online Checkout API for displaying INR and home currency prices",
+    "Exchange Rate API for fetching real-time currency conversion rates",
+    "Transaction Reconciliation API for unified dashboard integration",
+    "Cross-Border Payments API for seamless integration with existing suite",
+    "Merchant Configuration API for enabling DCC on supported devices"
+  ],
+  "recommended_tech_stack": [
+    "Go (backend microservices)",
+    "Postgres (transaction and merchant data storage)",
+    "Redis (caching exchange rates and session data)",
+    "Kafka (event-driven architecture for transaction processing)",
+    "gRPC (high-performance API communication)",
+    "HTTP (external integrations and APIs)",
+    "Android (POS terminal software)"
+  ],
+  "service_mapping": {
+    "Dynamic Currency Conversion (DCC)": "Payment Processing Service",
+    "Exchange Rate Calculation": "Currency Conversion Service",
+    "Customer Opt-in/Out Flow": "POS Service and Online Checkout Service",
+    "Unified Dashboard for Reconciliation": "Merchant Dashboard Service",
+    "Aggregator Merchant Support": "Merchant Onboarding and Configuration Service",
+    "Integration with Cross-Border Payments Suite": "Cross-Border Payments Service"
+  },
+  "data_models": {
+    "entities": [
+      {
+        "name": "Transaction",
+        "fields": [
+          "transaction_id",
+          "merchant_id",
+          "amount_in_inr",
+          "amount_in_home_currency",
+          "exchange_rate",
+          "dcc_opt_in",
+          "timestamp"
+        ]
+      },
+      {
+        "name": "Merchant",
+        "fields": [
+          "merchant_id",
+          "name",
+          "channel_type",
+          "dcc_enabled",
+          "revenue_share_percentage"
+        ]
+      },
+      {
+        "name": "ExchangeRate",
+        "fields": [
+          "currency_pair",
+          "rate",
+          "timestamp"
+        ]
+      },
+      {
+        "name": "Customer",
+        "fields": [
+          "customer_id",
+          "card_type",
+          "home_currency"
+        ]
+      }
+    ],
+    "data_flow": [
+      "Customer initiates payment at POS or online checkout",
+      "System detects international card and fetches real-time exchange rate",
+      "Customer opts in/out for DCC",
+      "Transaction is processed in INR or home currency based on customer choice",
+      "Transaction details are stored and reconciled in the unified dashboard"
+    ]
+  },
+  "edge_cases": [
+    "Exchange rate API downtime leading to inability to fetch real-time rates",
+    "Customer confusion about DCC opt-in/out flow, requiring clear UI/UX design",
+    "Fraudulent transactions using international cards, requiring enhanced security checks",
+    "Compliance with international payment regulations for currency conversion",
+    "Handling refunds and reversals for DCC transactions",
+    "Ensuring accurate reconciliation of DCC and non-DCC transactions in the dashboard",
+    "Support for non-Android POS devices in future phases"
+  ]
 }

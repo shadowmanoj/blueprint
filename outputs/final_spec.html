@@ -1,0 +1,309 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Technical Specification</title>
+            <style>
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                    line-height: 1.6;
+                    padding: 40px;
+                    max-width: 900px;
+                    margin: 0 auto;
+                    color: #333;
+                }
+                h1, h2, h3, h4 {
+                    color: #0066cc;
+                    margin-top: 24px;
+                    margin-bottom: 16px;
+                }
+                h1 { font-size: 28px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+                h2 { font-size: 24px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+                h3 { font-size: 20px; }
+                h4 { font-size: 16px; }
+                pre {
+                    background-color: #f6f8fa;
+                    border-radius: 3px;
+                    padding: 16px;
+                    overflow: auto;
+                    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+                }
+                code {
+                    background-color: rgba(27, 31, 35, 0.05);
+                    border-radius: 3px;
+                    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+                    padding: 0.2em 0.4em;
+                }
+                table {
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin-bottom: 20px;
+                }
+                table, th, td {
+                    border: 1px solid #ddd;
+                }
+                th, td {
+                    padding: 12px;
+                    text-align: left;
+                }
+                th {
+                    background-color: #f2f2f2;
+                }
+                blockquote {
+                    border-left: 4px solid #ddd;
+                    padding-left: 16px;
+                    color: #666;
+                    margin-left: 0;
+                }
+                ul, ol {
+                    padding-left: 2em;
+                }
+                img {
+                    max-width: 100%;
+                }
+            </style>
+        </head>
+        <body>
+            <pre># Technical Specification: Payment System Architecture
+
+## Overview
+
+This document outlines the technical specification for the proposed payment system architecture, which integrates new features and services into Razorpay's payment ecosystem. The architecture ensures scalability, modularity, and maintainability by leveraging existing services and introducing new components where necessary. The specification adheres to the provided internal guidelines and is structured for team review and engineering handoff.
+
+---
+
+## Features
+
+### 1. **Third-Party Payment Gateway Integration**
+- **Mapped Service**: **Mozart**
+- **Responsibilities**:
+  - Integrate with external payment gateways.
+  - Handle API calls and configurations for third-party payment services.
+  - Log audit trails for gateway interactions using PostgreSQL.
+- **Data Flow**:
+  - Incoming requests from **pg-router** → Mozart → Third-party gateway APIs → Response back to **pg-router**.
+
+---
+
+### 2. **Secure Payment Processing**
+- **Mapped Service**: **Eze-Middleware**
+- **Responsibilities**:
+  - Act as the intermediary layer for secure payment processing.
+  - Manage encryption key lifecycle and secure workflows.
+  - Interface with payment terminals and gateways.
+- **Data Flow**:
+  - Payment initiation from **Terminals** → Eze-Middleware → Payment Gateways via **pg-router**.
+
+---
+
+### 3. **Cross-Border Payments**
+- **Mapped Service**: **Payments Cross Border**
+- **Responsibilities**:
+  - Handle international transactions, including forex conversion and compliance.
+  - Manage lifecycle of cross-border payments.
+- **Data Flow**:
+  - Incoming cross-border payment requests from **pg-router** → Payments Cross Border → Forex and compliance services → Response back to **pg-router**.
+
+---
+
+### 4. **Payment Terminal Management**
+- **Mapped Service**: **Terminals**
+- **Responsibilities**:
+  - Onboard, configure, and manage lifecycle of payment terminals.
+  - Provide APIs for terminal-related operations.
+- **Data Flow**:
+  - Merchant onboarding requests → Terminals → Configuration updates → Terminals → Integration with **Eze-Middleware** for payment processing.
+
+---
+
+### 5. **Payment Routing**
+- **Mapped Service**: **pg-router**
+- **Responsibilities**:
+  - Route payment requests across various payment methods.
+  - Act as the central intermediary between the API layer and backend services.
+- **Data Flow**:
+  - Incoming payment requests → pg-router → Appropriate backend service (e.g., Mozart, Payments Cross Border, Payments Card Present) → Response back to API layer.
+
+---
+
+### 6. **Card-Present Payments**
+- **Mapped Service**: **Payments Card Present (PCP)**
+- **Responsibilities**:
+  - Handle physical card transactions through point-of-sale terminals.
+  - Manage lifecycle of card-present payments.
+- **Data Flow**:
+  - Card-present payment initiation from **Terminals** → Payments Card Present → Payment Gateway (via **pg-router**) → Response back to **Terminals**.
+
+---
+
+### Proposed New Services/Components
+
+#### 1. **Compliance Service**
+- **Reason**: Centralized compliance checks for all payment types to enhance modularity and scalability.
+- **Responsibilities**:
+  - Integrate with regulatory APIs and maintain audit logs.
+  - Perform compliance checks for domestic and international payments.
+- **Data Flow**:
+  - Payment requests from **pg-router** → Compliance Service → Response back to **pg-router**.
+
+#### 2. **Monitoring and Analytics Service**
+- **Reason**: Real-time monitoring and analytics for payment flows across services.
+- **Responsibilities**:
+  - Aggregate logs and metrics from all services (e.g., Mozart, Eze-Middleware, pg-router).
+  - Provide dashboards and alerts for operational insights.
+- **Data Flow**:
+  - Logs and metrics from all services → Monitoring and Analytics Service → Dashboards and alerts.
+
+---
+
+## Architecture Diagram
+
+```plaintext
+API Layer
+   ↓
+pg-router
+   ↙       ↘
+Mozart     Payments Cross Border
+   ↓             ↓
+Third-Party      Forex/Compliance APIs
+Gateways         ↓
+   ↓             Response
+Response         ↑
+   ↑             ↑
+pg-router        ↑
+   ↓             ↓
+Eze-Middleware   Payments Card Present
+   ↓             ↓
+Payment Gateways Payment Terminals
+   ↓             ↓
+Response         Response
+   ↑             ↑
+pg-router        ↑
+   ↓             ↓
+API Layer        API Layer
+```
+
+---
+
+## API Contracts
+
+### Example: Payment Gateway API (Mozart)
+#### Request
+```json
+{
+  "transaction_id": "12345",
+  "amount": 100.00,
+  "currency": "USD",
+  "payment_method": "credit_card",
+  "gateway": "stripe"
+}
+```
+
+#### Response
+```json
+{
+  "status": "success",
+  "transaction_id": "12345",
+  "gateway_response": {
+    "gateway_transaction_id": "67890",
+    "status": "approved"
+  }
+}
+```
+
+### Example: Compliance Service API
+#### Request
+```json
+{
+  "transaction_id": "12345",
+  "amount": 100.00,
+  "currency": "USD",
+  "payment_type": "international",
+  "merchant_id": "merchant_001"
+}
+```
+
+#### Response
+```json
+{
+  "status": "compliant",
+  "compliance_checks": [
+    {
+      "check": "AML",
+      "status": "passed"
+    },
+    {
+      "check": "KYC",
+      "status": "passed"
+    }
+  ]
+}
+```
+
+---
+
+## Open Questions
+
+1. **Compliance Service Scope**:
+   - Should compliance checks for domestic payments be included in the initial rollout, or deferred until international compliance is stabilized?
+
+2. **Monitoring Service Integration**:
+   - What level of granularity is required for metrics? Should we include per-transaction logs or aggregate-level data?
+
+3. **Fallback Mechanisms**:
+   - Should pg-router implement retries for failed requests to backend services, or should this be handled at the service level?
+
+4. **Data Partitioning**:
+   - For PostgreSQL audit logs in Mozart, should we implement partitioning for high-volume transactions?
+
+---
+
+## Ownership Summary
+
+| Service Name               | Responsibility                                                                 |
+|----------------------------|-------------------------------------------------------------------------------|
+| **Mozart**                 | Third-party gateway integration and audit logging.                           |
+| **Eze-Middleware**         | Secure payment processing and encryption management.                         |
+| **Payments Cross Border**  | Handling international transactions and forex compliance.                    |
+| **Terminals**              | Managing payment terminals and their lifecycle.                              |
+| **pg-router**              | Routing payments across services and methods.                                |
+| **Payments Card Present**  | Processing card-present transactions.                                        |
+| **Compliance Service**     | (Proposed) Centralized compliance checks for all payment types.              |
+| **Monitoring Service**     | (Proposed) Real-time monitoring and analytics for payment flows.             |
+
+---
+
+## Integration Notes
+
+- **pg-router** acts as the central hub for routing all payment requests to the appropriate backend services.
+- **Mozart** and **Payments Cross Border** handle external integrations, while **Eze-Middleware** ensures secure workflows.
+- **Terminals** and **Payments Card Present** focus on physical payment instruments.
+- Proposed services (Compliance and Monitoring) enhance modularity and scalability.
+
+---
+
+## Review Checklist
+
+### What’s Good
+- Clear mapping of features to services with responsibilities and data flows.
+- High-level architecture diagram is easy to understand.
+- API contracts are well-defined with examples.
+- Ownership summary provides clarity on service responsibilities.
+
+### Needs Improvement
+- Add explicit fallback and failure recovery strategies for pg-router and backend services.
+- Include SLAs/SLOs for new services (Compliance and Monitoring).
+- Specify testing types and metrics for go-live readiness.
+
+### Missing
+- Rollout plan for proposed services (Compliance and Monitoring).
+- Partitioning and archival strategy for PostgreSQL audit logs in Mozart.
+- Security considerations for encryption key lifecycle in Eze-Middleware.
+
+---
+
+This spec is ready for further review and refinement before engineering handoff.</pre>
+        </body>
+        </html>
+        
